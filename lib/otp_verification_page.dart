@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'widgets/animation_utils.dart';
 
 class OtpVerificationPage extends StatefulWidget {
   final String email;
@@ -17,6 +18,11 @@ class OtpVerificationPage extends StatefulWidget {
 }
 
 class _OtpVerificationPageState extends State<OtpVerificationPage> {
+  bool _isPhoneVerified = false;
+  bool _isEmailVerified = false;
+  bool _isPhoneCodeComplete = false;
+  bool _isEmailCodeComplete = false;
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -74,50 +80,80 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
               child: Column(
                 children: [
                   // Phone Verification Section
-                  _buildVerificationSection(
-                    title: 'Sent to your phone',
-                    value: widget.phoneNumber,
-                    onConfirm: () {
-                      // Confirm Phone OTP
-                    },
+                  FadeSlideTransition(
+                    delay: const Duration(milliseconds: 100),
+                    child: _buildVerificationSection(
+                      title: 'Sent to your phone',
+                      value: widget.phoneNumber,
+                      isVerified: _isPhoneVerified,
+                      isCodeComplete: _isPhoneCodeComplete,
+                      onCodeChanged: (isComplete) {
+                        setState(() {
+                          _isPhoneCodeComplete = isComplete;
+                        });
+                      },
+                      onConfirm: () {
+                        setState(() {
+                          _isPhoneVerified = true;
+                        });
+                      },
+                    ),
                   ),
 
                   const Divider(height: 25, thickness: 1, color: Colors.grey),
 
                   // Email Verification Section
-                  _buildVerificationSection(
-                    title: 'Sent to your e-mail',
-                    value: widget.email,
-                    onConfirm: () {
-                      // Confirm Email OTP
-                    },
+                  FadeSlideTransition(
+                    delay: const Duration(milliseconds: 300),
+                    child: _buildVerificationSection(
+                      title: 'Sent to your e-mail',
+                      value: widget.email,
+                      isVerified: _isEmailVerified,
+                      isCodeComplete: _isEmailCodeComplete,
+                      onCodeChanged: (isComplete) {
+                        setState(() {
+                          _isEmailCodeComplete = isComplete;
+                        });
+                      },
+                      onConfirm: () {
+                        setState(() {
+                          _isEmailVerified = true;
+                        });
+                      },
+                    ),
                   ),
 
                   const SizedBox(height: 15),
 
                   // Final Sign Up Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 55,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        // Final Sign Up Logic
-                      },
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(
-                          color: Color(0xFF2E4C9D),
-                          width: 2,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      child: Text(
-                        'SIGN UP',
-                        style: GoogleFonts.poppins(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                  FadeSlideTransition(
+                    delay: const Duration(milliseconds: 500),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 55,
+                      child: ScaleOnTap(
+                        onTap: () {
+                          // Final Sign Up Logic
+                        },
+                        child: OutlinedButton(
+                          onPressed: null, // ScaleOnTap manages it
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(
+                              color: Color(0xFF2E4C9D),
+                              width: 2,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          child: Text(
+                            'SIGN UP',
+                            style: GoogleFonts.poppins(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -135,6 +171,9 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
   Widget _buildVerificationSection({
     required String title,
     required String value,
+    required bool isVerified,
+    required bool isCodeComplete,
+    required Function(bool) onCodeChanged,
     required VoidCallback onConfirm,
   }) {
     return Column(
@@ -168,7 +207,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
         const SizedBox(height: 10),
 
         // OTP Input Fields
-        const OtpInputRow(),
+        OtpInputRow(onChanged: onCodeChanged),
 
         const SizedBox(height: 5),
         const OtpTimerControl(),
@@ -177,21 +216,35 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
         SizedBox(
           width: double.infinity,
           height: 45,
-          child: ElevatedButton(
-            onPressed: onConfirm,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2E4C9D),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
+          child: ScaleOnTap(
+            onTap: onConfirm,
+            child: ElevatedButton(
+              onPressed: null, // Managed by ScaleOnTap
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isVerified
+                    ? Colors.white
+                    : (isCodeComplete ? const Color(0xFF2E4C9D) : Colors.grey),
+                side: isVerified
+                    ? const BorderSide(color: Colors.green, width: 2)
+                    : null,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
               ),
-            ),
-            child: Text(
-              'Confirm',
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+              child: isVerified
+                  ? const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 24,
+                    )
+                  : Text(
+                      'Confirm',
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
           ),
         ),
@@ -201,7 +254,8 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
 }
 
 class OtpInputRow extends StatefulWidget {
-  const OtpInputRow({super.key});
+  final Function(bool) onChanged;
+  const OtpInputRow({super.key, required this.onChanged});
 
   @override
   State<OtpInputRow> createState() => _OtpInputRowState();
@@ -266,6 +320,9 @@ class _OtpInputRowState extends State<OtpInputRow> {
               } else if (value.isEmpty && index > 0) {
                 _focusNodes[index - 1].requestFocus();
               }
+
+              bool isComplete = _controllers.every((c) => c.text.isNotEmpty);
+              widget.onChanged(isComplete);
             },
           ),
         );

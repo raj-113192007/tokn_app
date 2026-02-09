@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:tokn/welcome_page.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -55,7 +56,29 @@ class _SplashScreenState extends State<SplashScreen>
           scale: _animation,
           child: FadeTransition(
             opacity: _animation,
-            child: Image.asset('assets/splash_logo.png'),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Hero(
+                  tag: 'app_logo',
+                  child: Image.asset(
+                    'assets/splash_logo.png',
+                    width: 150, // Slightly bigger than 120 but not huge
+                    height: 150,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'TokN',
+                  style: GoogleFonts.poppins(
+                    fontSize: 42,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

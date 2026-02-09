@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:tokn/login_page.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tokn/signup_page.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'widgets/animation_utils.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
@@ -29,13 +31,16 @@ class WelcomePage extends StatelessWidget {
                   padding: const EdgeInsets.only(left: 30.0),
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Welcome To\nTokN',
-                      style: GoogleFonts.poppins(
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        height: 1.2,
+                    child: FadeSlideTransition(
+                      delay: const Duration(milliseconds: 100),
+                      child: Text(
+                        'Welcome To\nTokN Admin',
+                        style: GoogleFonts.poppins(
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          height: 1.2,
+                        ),
                       ),
                     ),
                   ),
@@ -48,10 +53,13 @@ class WelcomePage extends StatelessWidget {
                       color: Colors.white,
                       shape: BoxShape.circle,
                     ),
-                    child: Image.asset(
-                      'assets/splash_logo.png',
-                      width: 100,
-                      height: 100,
+                    child: Hero(
+                      tag: 'app_logo',
+                      child: Image.asset(
+                        'assets/splash_logo.png',
+                        width: 100,
+                        height: 100,
+                      ),
                     ),
                   ),
                 ),
@@ -60,59 +68,69 @@ class WelcomePage extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 40.0),
                   child: Column(
                     children: [
-                      OutlinedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginPage(),
+                      FadeSlideTransition(
+                        delay: const Duration(milliseconds: 300),
+                        child: ScaleOnTap(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginPage(),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: const Color(0xFF6C63FF),
+                                width: 1.5,
+                              ),
+                              borderRadius: BorderRadius.circular(30),
                             ),
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                            color: Color(0xFF6C63FF),
-                            width: 1.5,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                          minimumSize: const Size(double.infinity, 50),
-                        ),
-                        child: Text(
-                          'Sign in',
-                          style: GoogleFonts.poppins(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF2E4C9D),
+                            child: Center(
+                              child: Text(
+                                'Sign in',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF2E4C9D),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const SignupPage(),
+                      FadeSlideTransition(
+                        delay: const Duration(milliseconds: 400),
+                        child: ScaleOnTap(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const SignupPage(),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF3B9966),
+                              borderRadius: BorderRadius.circular(30),
                             ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3B9966),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                          minimumSize: const Size(double.infinity, 50),
-                        ),
-                        child: Text(
-                          'Sign Up',
-                          style: GoogleFonts.poppins(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            child: Center(
+                              child: Text(
+                                'Sign Up',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -131,19 +149,30 @@ class WelcomePage extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildSocialButton(
-                      icon: FontAwesomeIcons.google,
-                      color: Colors.red,
+                    ScaleOnTap(
+                      onTap: () => _handleGoogleSignIn(context),
+                      child: _buildSocialButton(
+                        imageUrl:
+                            'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png',
+                      ),
                     ),
                     const SizedBox(width: 30),
-                    _buildSocialButton(
-                      icon: FontAwesomeIcons.envelope,
-                      color: Colors.redAccent,
+                    ScaleOnTap(
+                      onTap: () {
+                        // Gmail specific or just mail? Keeping as placeholder for now
+                      },
+                      child: _buildSocialButton(
+                        imageUrl:
+                            'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Gmail_icon_%282020%29.svg/2560px-Gmail_icon_%282020%29.svg.png',
+                      ),
                     ),
                     const SizedBox(width: 30),
-                    _buildSocialButton(
-                      icon: FontAwesomeIcons.facebookF,
-                      color: Colors.blue,
+                    ScaleOnTap(
+                      onTap: () => _handleFacebookSignIn(context),
+                      child: _buildSocialButton(
+                        imageUrl:
+                            'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/2023_Facebook_icon.svg/2048px-2023_Facebook_icon.svg.png',
+                      ),
                     ),
                   ],
                 ),
@@ -164,6 +193,29 @@ class WelcomePage extends StatelessWidget {
                     ), // Placeholder for flag
                   ],
                 ),
+                const SizedBox(height: 20),
+                FadeSlideTransition(
+                  delay: const Duration(milliseconds: 600),
+                  child: RichText(
+                    textAlign: TextAlign.center,
+                    text: TextSpan(
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.black54,
+                      ),
+                      children: [
+                        const TextSpan(text: 'By continuing you agree to our '),
+                        TextSpan(
+                          text: 'Term and Conditions',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF2E4C9D),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 10),
                 Text(
                   '© 2025 TOKN. All rights reserved.',
@@ -178,14 +230,81 @@ class WelcomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildSocialButton({required IconData icon, required Color color}) {
+  Future<void> _handleGoogleSignIn(BuildContext context) async {
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? account = await googleSignIn.signIn();
+      if (account != null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Logged in as ${account.displayName}')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Google Sign-In failed: $e')));
+      }
+    }
+  }
+
+  Future<void> _handleFacebookSignIn(BuildContext context) async {
+    try {
+      final LoginResult result = await FacebookAuth.instance.login();
+      if (result.status == LoginStatus.success) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Facebook Login Success')),
+          );
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Facebook Login failed: ${result.message}')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Facebook Login failed: $e')));
+      }
+    }
+  }
+
+  Widget _buildSocialButton({required String imageUrl}) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
+        color: Colors.white,
         shape: BoxShape.circle,
-        // border: Border.all(color: Colors.grey.shade300),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Icon(icon, color: color, size: 30),
+      child: Image.network(
+        imageUrl,
+        width: 35,
+        height: 35,
+        fit: BoxFit.contain,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return const SizedBox(
+            width: 35,
+            height: 35,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) =>
+            const Icon(Icons.error_outline, color: Colors.red, size: 35),
+      ),
     );
   }
 }

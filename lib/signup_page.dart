@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'otp_verification_page.dart';
+import 'widgets/animation_utils.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -145,20 +146,26 @@ class _SignupPageState extends State<SignupPage> {
                                   shape: BoxShape.circle,
                                 ),
                                 padding: const EdgeInsets.all(12),
-                                child: Image.asset(
-                                  'assets/splash_logo.png',
-                                  fit: BoxFit.contain,
+                                child: Hero(
+                                  tag: 'app_logo',
+                                  child: Image.asset(
+                                    'assets/splash_logo.png',
+                                    fit: BoxFit.contain,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 20),
-                              Text(
-                                'CREATE YOUR\nACCOUNT',
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  height: 1.2,
+                              FadeSlideTransition(
+                                delay: const Duration(milliseconds: 100),
+                                child: Text(
+                                  'CREATE YOUR\nACCOUNT',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    height: 1.2,
+                                  ),
                                 ),
                               ),
                             ],
@@ -185,106 +192,167 @@ class _SignupPageState extends State<SignupPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 60),
-                            _buildTextField(
-                              controller: _nameController,
-                              hintText: 'Full Name',
-                              icon: Icons.person_outline,
-                              errorText: _nameError,
+                            FadeSlideTransition(
+                              delay: const Duration(milliseconds: 200),
+                              beginOffset: const Offset(50.0, 0),
+                              child: _buildTextField(
+                                controller: _nameController,
+                                hintText: 'Full Name',
+                                icon: Icons.person_outline,
+                                errorText: _nameError,
+                              ),
                             ),
                             const SizedBox(height: 20),
-                            _buildTextField(
-                              controller: _emailController,
-                              hintText: 'Email Address',
-                              icon: Icons.email_outlined,
-                              keyboardType: TextInputType.emailAddress,
-                              errorText: _emailError,
+                            FadeSlideTransition(
+                              delay: const Duration(milliseconds: 300),
+                              beginOffset: const Offset(50.0, 0),
+                              child: _buildTextField(
+                                controller: _emailController,
+                                hintText: 'Email Address',
+                                icon: Icons.email_outlined,
+                                keyboardType: TextInputType.emailAddress,
+                                errorText: _emailError,
+                              ),
                             ),
                             const SizedBox(height: 20),
-                            _buildTextField(
-                              controller: _phoneController,
-                              hintText: 'Phone Number',
-                              icon: Icons.phone_android_outlined,
-                              keyboardType: TextInputType.phone,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                                LengthLimitingTextInputFormatter(10),
-                              ],
-                              errorText: _phoneError,
+                            FadeSlideTransition(
+                              delay: const Duration(milliseconds: 400),
+                              beginOffset: const Offset(50.0, 0),
+                              child: _buildTextField(
+                                controller: _phoneController,
+                                hintText: 'Phone Number',
+                                icon: Icons.phone_android_outlined,
+                                keyboardType: TextInputType.phone,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  LengthLimitingTextInputFormatter(10),
+                                ],
+                                errorText: _phoneError,
+                              ),
                             ),
                             const SizedBox(height: 20),
-                            _buildTextField(
-                              controller: _passwordController,
-                              hintText: 'Password',
-                              icon: Icons.lock_outline,
-                              isPassword: true,
-                              obscureText: _obscurePassword,
-                              onTogglePassword: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                              errorText: _passwordError,
+                            FadeSlideTransition(
+                              delay: const Duration(milliseconds: 500),
+                              beginOffset: const Offset(50.0, 0),
+                              child: _buildTextField(
+                                controller: _passwordController,
+                                hintText: 'Password',
+                                icon: Icons.lock_outline,
+                                isPassword: true,
+                                obscureText: _obscurePassword,
+                                onTogglePassword: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                                errorText: _passwordError,
+                              ),
                             ),
                             const SizedBox(height: 20),
-                            _buildTextField(
-                              controller: _confirmPasswordController,
-                              hintText: 'Confirm Password',
-                              icon: Icons.lock_outline,
-                              isPassword: true,
-                              obscureText: _obscureConfirmPassword,
-                              onTogglePassword: () {
-                                setState(() {
-                                  _obscureConfirmPassword =
-                                      !_obscureConfirmPassword;
-                                });
-                              },
-                              errorText: _confirmPasswordError,
+                            FadeSlideTransition(
+                              delay: const Duration(milliseconds: 600),
+                              beginOffset: const Offset(50.0, 0),
+                              child: _buildTextField(
+                                controller: _confirmPasswordController,
+                                hintText: 'Confirm Password',
+                                icon: Icons.lock_outline,
+                                isPassword: true,
+                                obscureText: _obscureConfirmPassword,
+                                onTogglePassword: () {
+                                  setState(() {
+                                    _obscureConfirmPassword =
+                                        !_obscureConfirmPassword;
+                                  });
+                                },
+                                errorText: _confirmPasswordError,
+                              ),
                             ),
 
                             const Spacer(),
 
                             Center(
-                              child: SizedBox(
-                                width: double.infinity,
-                                height: 55,
-                                child: OutlinedButton(
-                                  onPressed: _isFormValid
-                                      ? () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  OtpVerificationPage(
-                                                    email:
-                                                        _emailController.text,
-                                                    phoneNumber:
-                                                        _phoneController.text,
+                              child: FadeSlideTransition(
+                                delay: const Duration(milliseconds: 700),
+                                child: Column(
+                                  children: [
+                                    SizedBox(
+                                      width: double.infinity,
+                                      height: 55,
+                                      child: ScaleOnTap(
+                                        onTap: _isFormValid
+                                            ? () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        OtpVerificationPage(
+                                                          email:
+                                                              _emailController
+                                                                  .text,
+                                                          phoneNumber:
+                                                              _phoneController
+                                                                  .text,
+                                                        ),
                                                   ),
+                                                );
+                                              }
+                                            : null,
+                                        child: Container(
+                                          width: double.infinity,
+                                          height: 55,
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                              color: _isFormValid
+                                                  ? const Color(0xFF2E4C9D)
+                                                  : Colors.grey,
+                                              width: 2,
                                             ),
-                                          );
-                                        }
-                                      : null,
-                                  style: OutlinedButton.styleFrom(
-                                    side: BorderSide(
-                                      color: _isFormValid
-                                          ? const Color(0xFF2E4C9D)
-                                          : Colors.grey,
-                                      width: 2,
+                                            borderRadius: BorderRadius.circular(
+                                              30,
+                                            ),
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              'Verify Otp',
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.bold,
+                                                color: _isFormValid
+                                                    ? const Color(0xFF000000)
+                                                    : Colors.grey,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(30),
+                                    const SizedBox(height: 15),
+                                    FadeSlideTransition(
+                                      delay: const Duration(milliseconds: 800),
+                                      child: RichText(
+                                        textAlign: TextAlign.center,
+                                        text: TextSpan(
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 12,
+                                            color: Colors.black54,
+                                          ),
+                                          children: [
+                                            const TextSpan(
+                                              text:
+                                                  'By continuing you agree to our ',
+                                            ),
+                                            TextSpan(
+                                              text: 'Term and Conditions',
+                                              style: GoogleFonts.poppins(
+                                                fontWeight: FontWeight.bold,
+                                                color: const Color(0xFF2E4C9D),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                  child: Text(
-                                    'Verify Otp',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                      color: _isFormValid
-                                          ? const Color(0xFF000000)
-                                          : Colors.grey,
-                                    ),
-                                  ),
+                                  ],
                                 ),
                               ),
                             ),

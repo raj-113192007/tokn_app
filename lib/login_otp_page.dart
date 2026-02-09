@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'widgets/animation_utils.dart';
 
 class LoginOtpPage extends StatefulWidget {
   final String identifier;
@@ -17,6 +18,9 @@ class LoginOtpPage extends StatefulWidget {
 }
 
 class _LoginOtpPageState extends State<LoginOtpPage> {
+  bool _isVerified = false;
+  bool _isCodeComplete = false;
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -73,14 +77,17 @@ class _LoginOtpPageState extends State<LoginOtpPage> {
               padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 30),
               child: Column(
                 children: [
-                  _buildVerificationSection(
-                    title: widget.isPhone
-                        ? 'Sent to your phone'
-                        : 'Sent to your e-mail',
-                    value: widget.identifier,
-                    onConfirm: () {
-                      // Login Logic
-                    },
+                  FadeSlideTransition(
+                    delay: const Duration(milliseconds: 100),
+                    child: _buildVerificationSection(
+                      title: widget.isPhone
+                          ? 'Sent to your phone'
+                          : 'Sent to your e-mail',
+                      value: widget.identifier,
+                      onConfirm: () {
+                        // Login Logic
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -127,7 +134,13 @@ class _LoginOtpPageState extends State<LoginOtpPage> {
         const SizedBox(height: 20),
 
         // OTP Input Fields
-        const LoginOtpInputRow(),
+        LoginOtpInputRow(
+          onChanged: (isComplete) {
+            setState(() {
+              _isCodeComplete = isComplete;
+            });
+          },
+        ),
 
         const SizedBox(height: 10),
         const LoginOtpTimerControl(),
@@ -136,21 +149,40 @@ class _LoginOtpPageState extends State<LoginOtpPage> {
         SizedBox(
           width: double.infinity,
           height: 55,
-          child: ElevatedButton(
-            onPressed: onConfirm,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2E4C9D),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
+          child: ScaleOnTap(
+            onTap: () {
+              setState(() {
+                _isVerified = true;
+              });
+              onConfirm();
+            },
+            child: ElevatedButton(
+              onPressed: null, // Managed by ScaleOnTap
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _isVerified
+                    ? Colors.white
+                    : (_isCodeComplete ? const Color(0xFF2E4C9D) : Colors.grey),
+                side: _isVerified
+                    ? const BorderSide(color: Colors.green, width: 2)
+                    : null,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
               ),
-            ),
-            child: Text(
-              'Sign In',
-              style: GoogleFonts.poppins(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+              child: _isVerified
+                  ? const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 30,
+                    )
+                  : Text(
+                      'Sign In',
+                      style: GoogleFonts.poppins(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
           ),
         ),
@@ -160,7 +192,8 @@ class _LoginOtpPageState extends State<LoginOtpPage> {
 }
 
 class LoginOtpInputRow extends StatefulWidget {
-  const LoginOtpInputRow({super.key});
+  final Function(bool) onChanged;
+  const LoginOtpInputRow({super.key, required this.onChanged});
 
   @override
   State<LoginOtpInputRow> createState() => _LoginOtpInputRowState();
@@ -225,6 +258,9 @@ class _LoginOtpInputRowState extends State<LoginOtpInputRow> {
               } else if (value.isEmpty && index > 0) {
                 _focusNodes[index - 1].requestFocus();
               }
+
+              bool isComplete = _controllers.every((c) => c.text.isNotEmpty);
+              widget.onChanged(isComplete);
             },
           ),
         );
