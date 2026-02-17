@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tokn/home_page.dart';
 import 'widgets/animation_utils.dart';
 
 class OtpVerificationPage extends StatefulWidget {
@@ -133,7 +134,13 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                       height: 55,
                       child: ScaleOnTap(
                         onTap: () {
-                          // Final Sign Up Logic
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const HomePage(),
+                            ),
+                            (route) => false,
+                          );
                         },
                         child: OutlinedButton(
                           onPressed: null, // ScaleOnTap manages it

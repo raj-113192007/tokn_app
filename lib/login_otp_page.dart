@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tokn/home_page.dart';
 import 'widgets/animation_utils.dart';
 
 class LoginOtpPage extends StatefulWidget {
@@ -85,7 +86,13 @@ class _LoginOtpPageState extends State<LoginOtpPage> {
                           : 'Sent to your e-mail',
                       value: widget.identifier,
                       onConfirm: () {
-                        // Login Logic
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const HomePage(),
+                          ),
+                          (route) => false,
+                        );
                       },
                     ),
                   ),
