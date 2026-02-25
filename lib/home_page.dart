@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'hospital_details_page.dart';
+import 'messages_page.dart';
+import 'my_bookings_page.dart';
+import 'profile_page.dart';
+import 'widgets/animation_utils.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,6 +17,20 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+  String _userName = 'User';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = prefs.getString('user_name') ?? 'User';
+    });
+  }
 
   final List<Map<String, String>> _hospitals = [
     {
@@ -54,245 +75,297 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Custom App Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Row(
-                children: [
-                  // Logo/Avatar
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.blueAccent,
-                      borderRadius: BorderRadius.circular(12),
-                      image: const DecorationImage(
-                        image: AssetImage('assets/splash_logo.png'),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Hi User',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const Spacer(),
-                  // Notification Icon
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.notifications_outlined, color: Colors.black),
-                  ),
-                ],
+        child: AnimationLimiter(
+          child: Column(
+            children: AnimationConfiguration.toStaggeredList(
+              duration: const Duration(milliseconds: 600),
+              childAnimationBuilder: (widget) => SlideAnimation(
+                verticalOffset: 50.0,
+                child: FadeInAnimation(child: widget),
               ),
-            ),
-
-            // Search Bar Area
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Row(
-                children: [
-                  // Location Icon
-                  Container(
-                    width: 45,
-                    height: 45,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.location_on_outlined, color: Colors.black),
-                  ),
-                  const SizedBox(width: 10),
-                  // Search Field
-                  Expanded(
-                    child: Container(
-                      height: 45,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 15),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.search, color: Colors.black54),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'Search by category or name',
-                              style: GoogleFonts.poppins(
-                                color: Colors.black54,
-                                fontSize: 13,
-                              ),
-                            ),
+              children: [
+                // Custom App Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: Row(
+                    children: [
+                      // Logo/Avatar
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.blueAccent,
+                          borderRadius: BorderRadius.circular(12),
+                          image: const DecorationImage(
+                            image: AssetImage('assets/splash_logo.png'),
+                            fit: BoxFit.cover,
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Main Content Scroll
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Banner Carousel
-                    const SizedBox(height: 10),
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 20),
-                      height: 180,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        image: const DecorationImage(
-                          image: NetworkImage('https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=800'),
-                          fit: BoxFit.cover,
                         ),
                       ),
-                      child: Stack(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.black.withOpacity(0.5),
-                                ],
-                              ),
-                            ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Hi $_userName',
+                        style: GoogleFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const Spacer(),
+                      // Notification Icon
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.notifications_outlined, color: Colors.black),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Search Bar Area
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: Row(
+                    children: [
+                      // Location Icon
+                      ScaleOnTap(
+                        onTap: () {},
+                        child: Container(
+                          width: 45,
+                          height: 45,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            shape: BoxShape.circle,
                           ),
-                          Positioned(
-                            bottom: 20,
-                            left: 20,
-                            child: Text(
-                              'Find Best Doctors\nNear You',
-                              style: GoogleFonts.poppins(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 10,
-                            left: 0,
-                            right: 0,
+                          child: const Icon(Icons.location_on_outlined, color: Colors.black),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      // Search Field
+                      Expanded(
+                        child: GlassBox(
+                          borderRadius: 25,
+                          color: Colors.grey,
+                          opacity: 0.1,
+                          child: Container(
+                            height: 45,
+                            padding: const EdgeInsets.symmetric(horizontal: 15),
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                _buildDot(true),
-                                const SizedBox(width: 5),
-                                _buildDot(false),
-                                const SizedBox(width: 5),
-                                _buildDot(false),
+                                const Icon(Icons.search, color: Colors.black54),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Search by category or name',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.black54,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    // Hospitals Section
-                    _buildSectionHeader('Hospitals'),
-                    const SizedBox(height: 15),
-                    SizedBox(
-                      height: 160,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        itemCount: _hospitals.length,
-                        itemBuilder: (context, index) {
-                          return _buildHospitalCard(
-                            _hospitals[index]['name']!,
-                            _hospitals[index]['image']!,
-                          );
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    // Category Section
-                    _buildSectionHeader('Category'),
-                    const SizedBox(height: 15),
-                    SizedBox(
-                      height: 110,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        itemCount: _categories.length,
-                        itemBuilder: (context, index) {
-                          return _buildCategoryCard(
-                            _categories[index]['name']!,
-                            _categories[index]['image']!,
-                          );
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    // Recently Visited Section - reusing categories for demo purposes
-                    _buildSectionHeader('Recently Visited'),
-                    const SizedBox(height: 15),
-                    SizedBox(
-                      height: 110,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        itemCount: _categories.length,
-                        itemBuilder: (context, index) { // Just reversing for variety
-                           final reversedIndex = (_categories.length - 1) - index;
-                          return _buildCategoryCard(
-                            _categories[reversedIndex]['name']!,
-                            _categories[reversedIndex]['image']!,
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+
+                // Main Content Scroll
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Banner Carousel
+                        const SizedBox(height: 10),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: ScaleOnTap(
+                            onTap: () {},
+                            child: Stack(
+                              children: [
+                                Container(
+                                  height: 180,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20),
+                                    image: const DecorationImage(
+                                      image: NetworkImage('https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=800'),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  height: 180,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20),
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.transparent,
+                                        Colors.black.withOpacity(0.6),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 20,
+                                  left: 20,
+                                  child: Text(
+                                    'Find Best Doctors\nNear You',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                const Positioned(
+                                  top: 15,
+                                  right: 15,
+                                  child: GlassBox(
+                                    borderRadius: 12,
+                                    opacity: 0.2,
+                                    blur: 5,
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      child: Text(
+                                        'New',
+                                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 25),
+
+                        // Hospitals Section
+                        _buildSectionHeader('Hospitals'),
+                        const SizedBox(height: 15),
+                        SizedBox(
+                          height: 160,
+                          child: AnimationLimiter(
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              itemCount: _hospitals.length,
+                              itemBuilder: (context, index) {
+                                return AnimationConfiguration.staggeredList(
+                                  position: index,
+                                  duration: const Duration(milliseconds: 500),
+                                  child: SlideAnimation(
+                                    horizontalOffset: 50.0,
+                                    child: FadeInAnimation(
+                                      child: _buildHospitalCard(
+                                        context,
+                                        _hospitals[index]['name']!,
+                                        _hospitals[index]['image']!,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 25),
+
+                        // Category Section
+                        _buildSectionHeader('Category'),
+                        const SizedBox(height: 15),
+                        SizedBox(
+                          height: 110,
+                          child: AnimationLimiter(
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              itemCount: _categories.length,
+                              itemBuilder: (context, index) {
+                                return AnimationConfiguration.staggeredList(
+                                  position: index,
+                                  duration: const Duration(milliseconds: 500),
+                                  child: ScaleAnimation(
+                                    child: FadeInAnimation(
+                                      child: _buildCategoryCard(
+                                        _categories[index]['name']!,
+                                        _categories[index]['image']!,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 25),
+
+                        // Recently Visited Section - reusing categories for demo purposes
+                        _buildSectionHeader('Recently Visited'),
+                        const SizedBox(height: 15),
+                        SizedBox(
+                          height: 110,
+                          child: AnimationLimiter(
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              itemCount: _categories.length,
+                              itemBuilder: (context, index) {
+                                final reversedIndex = (_categories.length - 1) - index;
+                                return AnimationConfiguration.staggeredList(
+                                  position: index,
+                                  duration: const Duration(milliseconds: 500),
+                                  child: SlideAnimation(
+                                    horizontalOffset: 50.0,
+                                    child: FadeInAnimation(
+                                      child: _buildCategoryCard(
+                                        _categories[reversedIndex]['name']!,
+                                        _categories[reversedIndex]['image']!,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF2E4C9D), // Blue
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(25),
-            topRight: Radius.circular(25),
           ),
         ),
-        padding: const EdgeInsets.symmetric(vertical: 15),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildNavItem(Icons.home_filled, 'Home', _selectedIndex == 0, 0),
-            _buildNavItem(Icons.receipt_long, 'History', _selectedIndex == 1, 1),
-            _buildNavItem(Icons.chat_bubble_outline, 'Chat', _selectedIndex == 2, 2),
-            _buildNavItem(Icons.person_outline, 'Profile', _selectedIndex == 3, 3),
-          ],
+      ),
+      bottomNavigationBar: GlassBox(
+        borderRadius: 25,
+        blur: 20,
+        opacity: 0.1,
+        color: const Color(0xFF2E4C9D),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(Icons.home_filled, 'Home', _selectedIndex == 0, 0),
+              _buildNavItem(Icons.receipt_long, 'Bookings', _selectedIndex == 1, 1, isNewPage: true),
+              _buildNavItem(Icons.chat_bubble_outline, 'Chat', _selectedIndex == 2, 2, isNewPage: true),
+              _buildNavItem(Icons.person_outline, 'Profile', _selectedIndex == 3, 3, isNewPage: true),
+            ],
+          ),
         ),
       ),
     );
@@ -329,8 +402,20 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildHospitalCard(String name, String imageUrl) {
-    return Container(
+  Widget _buildHospitalCard(BuildContext context, String name, String imageUrl) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HospitalDetailsPage(
+              hospitalName: name,
+              hospitalImage: imageUrl,
+            ),
+          ),
+        );
+      },
+      child: Container(
       width: 140,
       margin: const EdgeInsets.only(right: 15),
       child: Column(
@@ -418,32 +503,55 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, bool isActive, int index) {
+  Widget _buildNavItem(IconData icon, String label, bool isActive, int index, {bool isNewPage = false}) {
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
+        if (isNewPage && index == 1) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const MyBookingsPage()),
+          );
+        } else if (isNewPage && index == 2) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const MessagesPage()),
+          );
+        } else if (isNewPage && index == 3) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ProfilePage()),
+          );
+        } else {
+          setState(() {
+            _selectedIndex = index;
+          });
+        }
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-           Container(
-             decoration: isActive ? BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-             ) : null,
-            padding: EdgeInsets.all(isActive ? 8 : 0),
+          Container(
+            decoration: isActive
+                ? BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  )
+                : null,
+            padding: EdgeInsets.all(isActive ? 5 : 0),
             child: Icon(
               icon,
               color: Colors.white,
               size: 26,
             ),
           ),
-           if (isActive) ...[
-             const SizedBox(height: 4),
-             Text(label, style: GoogleFonts.poppins(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),)
-           ]
+          if (isActive) ...[
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                  color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+            )
+          ]
         ],
       ),
     );

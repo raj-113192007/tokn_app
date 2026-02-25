@@ -1,7 +1,7 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tokn/welcome_page.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -11,34 +11,65 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
+  late AnimationController _textController;
+  late Animation<double> _textAnimation;
 
   @override
   void initState() {
     super.initState();
 
     _controller = AnimationController(
-      // Animation duration slightly less than total wait time for better visual effect
       duration: const Duration(seconds: 1, milliseconds: 500),
       vsync: this,
     )..forward();
 
     _animation = CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeOutBack, // Gives a nice "pop" effect
+      curve: Curves.elasticOut,
     );
 
-    // Navigate after 2 seconds total
-    Timer(const Duration(seconds: 2), () {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const WelcomePage()),
-        );
+    _textController = AnimationController(
+      duration: const Duration(seconds: 1),
+      vsync: this,
+    );
+
+    _textAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _textController, curve: Curves.easeIn),
+    );
+
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _textController.forward();
       }
     });
+
+    _initApp();
+  }
+
+  Future<void> _initApp() async {
+    // Wait for initial animation
+    await Future.delayed(const Duration(seconds: 1));
+    
+    // Request Essential Permissions
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.location,
+      Permission.notification,
+      Permission.phone,
+      Permission.storage,
+    ].request();
+
+    // Small delay for UX
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const WelcomePage()),
+      );
+    }
   }
 
   @override

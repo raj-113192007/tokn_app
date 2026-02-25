@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:ui';
 
 class FadeSlideTransition extends StatefulWidget {
   final Widget child;
@@ -81,13 +83,15 @@ class ScaleOnTap extends StatefulWidget {
   final VoidCallback? onTap;
   final Duration duration;
   final double scaleFactor;
+  final bool enableHaptic;
 
   const ScaleOnTap({
     super.key,
     required this.child,
     required this.onTap,
-    this.duration = const Duration(milliseconds: 100),
-    this.scaleFactor = 0.95,
+    this.duration = const Duration(milliseconds: 150),
+    this.scaleFactor = 0.90, // Slightly more pronounced for "depth"
+    this.enableHaptic = true,
   });
 
   @override
@@ -112,7 +116,7 @@ class _ScaleOnTapState extends State<ScaleOnTap>
       end: widget.scaleFactor,
     ).animate(CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOut,
     ));
   }
 
@@ -125,6 +129,10 @@ class _ScaleOnTapState extends State<ScaleOnTap>
   Future<void> _handleTap() async {
     if (widget.onTap == null) return;
     
+    if (widget.enableHaptic) {
+      HapticFeedback.mediumImpact();
+    }
+    
     await _controller.forward();
     await _controller.reverse();
     widget.onTap!();
@@ -133,10 +141,51 @@ class _ScaleOnTapState extends State<ScaleOnTap>
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) => _controller.reverse(),
+      onTapCancel: () => _controller.reverse(),
       onTap: _handleTap,
       child: ScaleTransition(
         scale: _scaleAnimation,
         child: widget.child,
+      ),
+    );
+  }
+}
+
+class GlassBox extends StatelessWidget {
+  final Widget child;
+  final double blur;
+  final double opacity;
+  final double borderRadius;
+  final Color color;
+
+  const GlassBox({
+    super.key,
+    required this.child,
+    this.blur = 15,
+    this.opacity = 0.1,
+    this.borderRadius = 20,
+    this.color = Colors.white,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+        child: Container(
+          decoration: BoxDecoration(
+            color: color.withOpacity(opacity),
+            borderRadius: BorderRadius.circular(borderRadius),
+            border: Border.all(
+              color: color.withOpacity(0.2),
+              width: 1.5,
+            ),
+          ),
+          child: child,
+        ),
       ),
     );
   }

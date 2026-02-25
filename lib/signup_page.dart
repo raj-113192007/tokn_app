@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'otp_verification_page.dart';
 import 'widgets/animation_utils.dart';
 
@@ -280,21 +281,26 @@ class _SignupPageState extends State<SignupPage> {
                                       height: 55,
                                       child: ScaleOnTap(
                                         onTap: _isFormValid
-                                            ? () {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        OtpVerificationPage(
-                                                          email:
-                                                              _emailController
-                                                                  .text,
-                                                          phoneNumber:
-                                                              _phoneController
-                                                                  .text,
-                                                        ),
-                                                  ),
-                                                );
+                                            ? () async {
+                                                final prefs = await SharedPreferences.getInstance();
+                                                await prefs.setString('user_name', _nameController.text.trim());
+                                                
+                                                if (mounted) {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          OtpVerificationPage(
+                                                            email:
+                                                                _emailController
+                                                                    .text,
+                                                            phoneNumber:
+                                                                _phoneController
+                                                                    .text,
+                                                          ),
+                                                    ),
+                                                  );
+                                                }
                                               }
                                             : null,
                                         child: Container(
