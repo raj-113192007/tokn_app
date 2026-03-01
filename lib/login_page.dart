@@ -119,7 +119,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 150),
                   FadeSlideTransition(
                     delay: const Duration(milliseconds: 300),
-                    beginOffset: const Offset(50.0, 0), // Glide from right
+                    beginOffset: const Offset(0.1, 0), // Subtle glide
                     child: _buildTextField(
                       controller: _identifierController,
                       hintText: 'Email or Mobile Number',
@@ -130,7 +130,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 25),
                   FadeSlideTransition(
                     delay: const Duration(milliseconds: 400),
-                    beginOffset: const Offset(50.0, 0), // Glide from right
+                    beginOffset: const Offset(0.1, 0), // Subtle glide
                     child: _buildTextField(
                       controller: _passwordController,
                       hintText: 'Password',

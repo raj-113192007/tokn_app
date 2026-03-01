@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'widgets/animation_utils.dart';
+import 'widgets/glass_bottom_bar.dart';
 
 class HospitalDetailsPage extends StatelessWidget {
   final String hospitalName;
@@ -369,41 +370,41 @@ class HospitalDetailsPage extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: ScaleOnTap(
-          onTap: () {},
-          child: Container(
-            height: 55,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: const Color(0xFF2E4C9D),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.receipt_long_outlined, color: Colors.white),
-                const SizedBox(width: 10),
-                Text(
-                  'Book Token Now',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+      bottomNavigationBar: GlassBottomBar(
+        height: 85,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15),
+          child: ScaleOnTap(
+            onTap: () {},
+            child: Container(
+              height: 55,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFF2E4C9D),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF2E4C9D).withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
-                ),
-              ],
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.receipt_long_outlined, color: Colors.white),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Book Token Now',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

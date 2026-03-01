@@ -169,6 +169,7 @@ class _LoginOtpPageState extends State<LoginOtpPage> {
                 backgroundColor: _isVerified
                     ? Colors.white
                     : (_isCodeComplete ? const Color(0xFF2E4C9D) : Colors.grey),
+                foregroundColor: _isCodeComplete ? Colors.white : Colors.white70,
                 side: _isVerified
                     ? const BorderSide(color: Colors.green, width: 2)
                     : null,

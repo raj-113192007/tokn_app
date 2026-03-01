@@ -13,9 +13,9 @@ class FadeSlideTransition extends StatefulWidget {
     super.key,
     required this.child,
     this.delay = Duration.zero,
-    this.beginOffset = const Offset(0, 0.35),
-    this.curve = Curves.easeOutBack,
-    this.duration = const Duration(milliseconds: 800),
+    this.beginOffset = const Offset(0, 0.1),
+    this.curve = Curves.easeOutCubic,
+    this.duration = const Duration(milliseconds: 600),
   });
 
   @override

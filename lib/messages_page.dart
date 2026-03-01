@@ -118,7 +118,7 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
                     Expanded(
                       child: TextField(
                         decoration: InputDecoration(
-                          hintText: 'Search doctors or staff',
+                          hintText: 'Search hospital chats',
                           hintStyle: GoogleFonts.poppins(color: Colors.blueGrey, fontSize: 14),
                           border: InputBorder.none,
                         ),
@@ -130,35 +130,17 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
             ),
           ),
 
-          // Tab Bar
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TabBar(
-              controller: _tabController,
-              isScrollable: true,
-              labelColor: const Color(0xFF2E4C9D),
-              unselectedLabelColor: Colors.grey,
-              labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16),
-              indicatorColor: const Color(0xFF2E4C9D),
-              indicatorSize: TabBarIndicatorSize.label,
-              indicatorWeight: 3,
-              tabs: const [
-                Tab(text: 'All'),
-                Tab(text: 'Doctors'),
-                Tab(text: 'Staff'),
-              ],
-            ),
-          ),
           const Divider(height: 1, thickness: 0.5),
 
-          // Chat List
+          // Chat List - Filtered to only show Reception/Hospital chats
           Expanded(
             child: AnimationLimiter(
               child: ListView.builder(
                 padding: const EdgeInsets.only(top: 10),
-                itemCount: _chats.length,
+                itemCount: _chats.where((chat) => chat['isReception'] == true).length,
                 itemBuilder: (context, index) {
-                  final chat = _chats[index];
+                  final filteredChats = _chats.where((chat) => chat['isReception'] == true).toList();
+                  final chat = filteredChats[index];
                   return AnimationConfiguration.staggeredList(
                     position: index,
                     duration: const Duration(milliseconds: 500),

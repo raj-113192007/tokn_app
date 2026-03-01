@@ -195,7 +195,7 @@ class _SignupPageState extends State<SignupPage> {
                             const SizedBox(height: 60),
                             FadeSlideTransition(
                               delay: const Duration(milliseconds: 200),
-                              beginOffset: const Offset(50.0, 0),
+                              beginOffset: const Offset(0.1, 0),
                               child: _buildTextField(
                                 controller: _nameController,
                                 hintText: 'Full Name',
@@ -206,7 +206,7 @@ class _SignupPageState extends State<SignupPage> {
                             const SizedBox(height: 20),
                             FadeSlideTransition(
                               delay: const Duration(milliseconds: 300),
-                              beginOffset: const Offset(50.0, 0),
+                              beginOffset: const Offset(0.1, 0),
                               child: _buildTextField(
                                 controller: _emailController,
                                 hintText: 'Email Address',
@@ -218,7 +218,7 @@ class _SignupPageState extends State<SignupPage> {
                             const SizedBox(height: 20),
                             FadeSlideTransition(
                               delay: const Duration(milliseconds: 400),
-                              beginOffset: const Offset(50.0, 0),
+                              beginOffset: const Offset(0.1, 0),
                               child: _buildTextField(
                                 controller: _phoneController,
                                 hintText: 'Phone Number',
@@ -234,7 +234,7 @@ class _SignupPageState extends State<SignupPage> {
                             const SizedBox(height: 20),
                             FadeSlideTransition(
                               delay: const Duration(milliseconds: 500),
-                              beginOffset: const Offset(50.0, 0),
+                              beginOffset: const Offset(0.1, 0),
                               child: _buildTextField(
                                 controller: _passwordController,
                                 hintText: 'Password',
@@ -252,7 +252,7 @@ class _SignupPageState extends State<SignupPage> {
                             const SizedBox(height: 20),
                             FadeSlideTransition(
                               delay: const Duration(milliseconds: 600),
-                              beginOffset: const Offset(50.0, 0),
+                              beginOffset: const Offset(0.1, 0),
                               child: _buildTextField(
                                 controller: _confirmPasswordController,
                                 hintText: 'Confirm Password',

@@ -142,23 +142,29 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                             (route) => false,
                           );
                         },
-                        child: OutlinedButton(
-                          onPressed: null, // ScaleOnTap manages it
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(
-                              color: Color(0xFF2E4C9D),
+                        child: Container(
+                          width: double.infinity,
+                          height: 55,
+                          decoration: BoxDecoration(
+                            color: (_isPhoneCodeComplete && _isEmailCodeComplete)
+                                ? const Color(0xFF2E4C9D)
+                                : Colors.white,
+                            border: Border.all(
+                              color: const Color(0xFF2E4C9D),
                               width: 2,
                             ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
+                            borderRadius: BorderRadius.circular(30),
                           ),
-                          child: Text(
-                            'SIGN UP',
-                            style: GoogleFonts.poppins(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
+                          child: Center(
+                            child: Text(
+                              'SIGN UP',
+                              style: GoogleFonts.poppins(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: (_isPhoneCodeComplete && _isEmailCodeComplete)
+                                    ? Colors.white
+                                    : Colors.black,
+                              ),
                             ),
                           ),
                         ),
