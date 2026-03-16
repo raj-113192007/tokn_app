@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:tokn/splash_screen.dart';
+import 'package:home_widget/home_widget.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  HomeWidget.setAppGroupId('tokn_app_group');
   runApp(const MyApp());
 }
 

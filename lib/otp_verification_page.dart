@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tokn/home_page.dart';
 import 'widgets/animation_utils.dart';
+import 'services/api_service.dart';
 
 class OtpVerificationPage extends StatefulWidget {
   final String email;
@@ -24,170 +25,216 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
   bool _isPhoneCodeComplete = false;
   bool _isEmailCodeComplete = false;
 
+  bool _isLoading = false;
+
+  Future<void> _verifyCode(String value, bool isPhone, String code, Function(bool) onVerified) async {
+    setState(() => _isLoading = true);
+    
+    final result = await ApiService.verifyOtp(
+      email: isPhone ? null : value,
+      phone: isPhone ? value : null,
+      otp: code,
+    );
+
+    if (mounted) {
+      if (result['success'] == true) {
+        setState(() {
+          _isLoading = false;
+          onVerified(true);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${isPhone ? "Phone" : "Email"} verified!'), backgroundColor: Colors.green),
+        );
+      } else {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['error'] ?? 'Verification failed'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
+      body: Stack(
         children: [
-          // Header
-          Container(
-            height: size.height * 0.12,
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              color: Color(0xFF2E4C9D), // Blue background
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(40),
-                bottomRight: Radius.circular(40),
+          Column(
+            children: [
+              // Header
+              Container(
+                height: size.height * 0.12,
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF2E4C9D), // Blue background
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(40),
+                    bottomRight: Radius.circular(40),
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: 45,
+                      left: 0,
+                      right: 0,
+                      child: Text(
+                        'Verification',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 35,
+                      left: 10,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back_ios,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            child: Stack(
-              children: [
-                Positioned(
-                  top: 45,
-                  left: 0,
-                  right: 0,
-                  child: Text(
-                    'Verification',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 35,
-                  left: 10,
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ),
-              ],
-            ),
-          ),
 
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-              child: Column(
-                children: [
-                  // Phone Verification Section
-                  FadeSlideTransition(
-                    delay: const Duration(milliseconds: 100),
-                    child: _buildVerificationSection(
-                      title: 'Sent to your phone',
-                      value: widget.phoneNumber,
-                      isVerified: _isPhoneVerified,
-                      isCodeComplete: _isPhoneCodeComplete,
-                      onCodeChanged: (isComplete) {
-                        setState(() {
-                          _isPhoneCodeComplete = isComplete;
-                        });
-                      },
-                      onConfirm: () {
-                        setState(() {
-                          _isPhoneVerified = true;
-                        });
-                      },
-                    ),
-                  ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+                  child: Column(
+                    children: [
+                      // Phone Verification Section
+                      FadeSlideTransition(
+                        delay: const Duration(milliseconds: 100),
+                        child: _buildVerificationSection(
+                          title: 'Sent to your phone',
+                          value: widget.phoneNumber,
+                          isVerified: _isPhoneVerified,
+                          isCodeComplete: _isPhoneCodeComplete,
+                          onCodeChanged: (isComplete, code) {
+                            setState(() {
+                              _isPhoneCodeComplete = isComplete;
+                              if (isComplete) {
+                                // Optionally auto-verify
+                                _verifyCode(widget.phoneNumber, true, code, (v) => _isPhoneVerified = v);
+                              }
+                            });
+                          },
+                          onConfirm: (code) {
+                            _verifyCode(widget.phoneNumber, true, code, (v) => _isPhoneVerified = v);
+                          },
+                        ),
+                      ),
 
-                  const Divider(height: 25, thickness: 1, color: Colors.grey),
+                      const Divider(height: 25, thickness: 1, color: Colors.grey),
 
-                  // Email Verification Section
-                  FadeSlideTransition(
-                    delay: const Duration(milliseconds: 300),
-                    child: _buildVerificationSection(
-                      title: 'Sent to your e-mail',
-                      value: widget.email,
-                      isVerified: _isEmailVerified,
-                      isCodeComplete: _isEmailCodeComplete,
-                      onCodeChanged: (isComplete) {
-                        setState(() {
-                          _isEmailCodeComplete = isComplete;
-                        });
-                      },
-                      onConfirm: () {
-                        setState(() {
-                          _isEmailVerified = true;
-                        });
-                      },
-                    ),
-                  ),
+                      // Email Verification Section
+                      FadeSlideTransition(
+                        delay: const Duration(milliseconds: 300),
+                        child: _buildVerificationSection(
+                          title: 'Sent to your e-mail',
+                          value: widget.email,
+                          isVerified: _isEmailVerified,
+                          isCodeComplete: _isEmailCodeComplete,
+                          onCodeChanged: (isComplete, code) {
+                            setState(() {
+                              _isEmailCodeComplete = isComplete;
+                              if (isComplete) {
+                                _verifyCode(widget.email, false, code, (v) => _isEmailVerified = v);
+                              }
+                            });
+                          },
+                          onConfirm: (code) {
+                            _verifyCode(widget.email, false, code, (v) => _isEmailVerified = v);
+                          },
+                        ),
+                      ),
 
-                  const SizedBox(height: 15),
+                      const SizedBox(height: 15),
 
-                  // Final Sign Up Button
-                  FadeSlideTransition(
-                    delay: const Duration(milliseconds: 500),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: ScaleOnTap(
-                        onTap: () {
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const HomePage(),
-                            ),
-                            (route) => false,
-                          );
-                        },
-                        child: Container(
+                      // Final Sign Up Button
+                      FadeSlideTransition(
+                        delay: const Duration(milliseconds: 500),
+                        child: SizedBox(
                           width: double.infinity,
                           height: 55,
-                          decoration: BoxDecoration(
-                            color: (_isPhoneCodeComplete && _isEmailCodeComplete)
-                                ? const Color(0xFF2E4C9D)
-                                : Colors.white,
-                            border: Border.all(
-                              color: const Color(0xFF2E4C9D),
-                              width: 2,
-                            ),
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'SIGN UP',
-                              style: GoogleFonts.poppins(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: (_isPhoneCodeComplete && _isEmailCodeComplete)
-                                    ? Colors.white
-                                    : Colors.black,
+                          child: ScaleOnTap(
+                            onTap: (_isPhoneVerified && _isEmailVerified)
+                                ? () {
+                                    Navigator.pushAndRemoveUntil(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const HomePage(),
+                                      ),
+                                      (route) => false,
+                                    );
+                                  }
+                                : null,
+                            child: Container(
+                              width: double.infinity,
+                              height: 55,
+                              decoration: BoxDecoration(
+                                color: (_isPhoneVerified && _isEmailVerified)
+                                    ? const Color(0xFF2E4C9D)
+                                    : Colors.white,
+                                border: Border.all(
+                                  color: const Color(0xFF2E4C9D),
+                                  width: 2,
+                                ),
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'GO TO HOME',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: (_isPhoneVerified && _isEmailVerified)
+                                        ? Colors.white
+                                        : Colors.black,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 20),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
+          if (_isLoading)
+            Container(
+              color: Colors.black26,
+              child: const Center(child: CircularProgressIndicator()),
+            ),
         ],
       ),
     );
   }
+
+  String _currentPhoneCode = "";
+  String _currentEmailCode = "";
 
   Widget _buildVerificationSection({
     required String title,
     required String value,
     required bool isVerified,
     required bool isCodeComplete,
-    required Function(bool) onCodeChanged,
-    required VoidCallback onConfirm,
+    required Function(bool, String) onCodeChanged,
+    required Function(String) onConfirm,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,29 +267,49 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
         const SizedBox(height: 10),
 
         // OTP Input Fields
-        OtpInputRow(onChanged: onCodeChanged),
+        OtpInputRow(onChanged: (complete, code) {
+           if (title.contains('phone')) _currentPhoneCode = code;
+           else _currentEmailCode = code;
+           onCodeChanged(complete, code);
+        }),
 
         const SizedBox(height: 5),
-        const OtpTimerControl(),
+        OtpTimerControl(onResend: () async {
+          setState(() => _isLoading = true);
+          final res = await ApiService.sendOtp(
+            email: title.contains('phone') ? null : value,
+            phone: title.contains('phone') ? value : null,
+          );
+          if (mounted) {
+            setState(() => _isLoading = false);
+            if (res['success'] == true) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('OTP Resent!'), backgroundColor: Colors.green),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(res['error'] ?? 'Resend failed'), backgroundColor: Colors.red),
+              );
+            }
+          }
+        }),
 
         const SizedBox(height: 10),
         SizedBox(
           width: double.infinity,
           height: 45,
           child: ScaleOnTap(
-            onTap: onConfirm,
-            child: ElevatedButton(
-              onPressed: null, // Managed by ScaleOnTap
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isVerified
+            onTap: isVerified ? null : () => onConfirm(title.contains('phone') ? _currentPhoneCode : _currentEmailCode),
+            child: Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isVerified
                     ? Colors.white
                     : (isCodeComplete ? const Color(0xFF2E4C9D) : Colors.grey),
-                side: isVerified
-                    ? const BorderSide(color: Colors.green, width: 2)
+                border: isVerified
+                    ? Border.all(color: Colors.green, width: 2)
                     : null,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
+                borderRadius: BorderRadius.circular(30),
               ),
               child: isVerified
                   ? const Icon(
@@ -267,7 +334,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
 }
 
 class OtpInputRow extends StatefulWidget {
-  final Function(bool) onChanged;
+  final Function(bool, String) onChanged;
   const OtpInputRow({super.key, required this.onChanged});
 
   @override
@@ -334,8 +401,9 @@ class _OtpInputRowState extends State<OtpInputRow> {
                 _focusNodes[index - 1].requestFocus();
               }
 
-              bool isComplete = _controllers.every((c) => c.text.isNotEmpty);
-              widget.onChanged(isComplete);
+              String code = _controllers.map((c) => c.text).join();
+              bool isComplete = code.isNotEmpty;
+              widget.onChanged(isComplete, code);
             },
           ),
         );
@@ -345,7 +413,8 @@ class _OtpInputRowState extends State<OtpInputRow> {
 }
 
 class OtpTimerControl extends StatefulWidget {
-  const OtpTimerControl({super.key});
+  final VoidCallback onResend;
+  const OtpTimerControl({super.key, required this.onResend});
 
   @override
   State<OtpTimerControl> createState() => _OtpTimerControlState();
@@ -407,6 +476,7 @@ class _OtpTimerControlState extends State<OtpTimerControl> {
                       _secondsRemaining = 94;
                       _startTimer();
                     });
+                    widget.onResend();
                   }
                 : null,
             child: Text(

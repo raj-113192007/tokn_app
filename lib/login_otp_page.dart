@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tokn/home_page.dart';
 import 'widgets/animation_utils.dart';
+import 'services/api_service.dart';
 
 class LoginOtpPage extends StatefulWidget {
   final String identifier;
@@ -21,6 +22,34 @@ class LoginOtpPage extends StatefulWidget {
 class _LoginOtpPageState extends State<LoginOtpPage> {
   bool _isVerified = false;
   bool _isCodeComplete = false;
+  bool _isLoading = false;
+
+  Future<void> _verifyOtp(String otp) async {
+    setState(() => _isLoading = true);
+    final res = await ApiService.verifyOtp(
+      email: widget.isPhone ? null : widget.identifier,
+      phone: widget.isPhone ? widget.identifier : null,
+      otp: otp,
+    );
+    
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (res['success'] == true) {
+        setState(() => _isVerified = true);
+        Future.delayed(const Duration(milliseconds: 500), () {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const HomePage()),
+            (route) => false,
+          );
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(res['error'] ?? 'Verification failed'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,87 +57,92 @@ class _LoginOtpPageState extends State<LoginOtpPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
+      body: Stack(
         children: [
-          // Header
-          Container(
-            height: size.height * 0.12,
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              color: Color(0xFF2E4C9D), // Blue background
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(40),
-                bottomRight: Radius.circular(40),
+          Column(
+            children: [
+              // Header
+              Container(
+                height: size.height * 0.12,
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF2E4C9D), // Blue background
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(40),
+                    bottomRight: Radius.circular(40),
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: 45,
+                      left: 0,
+                      right: 0,
+                      child: Text(
+                        'Verification',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 35,
+                      left: 10,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back_ios,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            child: Stack(
-              children: [
-                Positioned(
-                  top: 45,
-                  left: 0,
-                  right: 0,
-                  child: Text(
-                    'Verification',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 35,
-                  left: 10,
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ),
-              ],
-            ),
-          ),
 
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 30),
-              child: Column(
-                children: [
-                  FadeSlideTransition(
-                    delay: const Duration(milliseconds: 100),
-                    child: _buildVerificationSection(
-                      title: widget.isPhone
-                          ? 'Sent to your phone'
-                          : 'Sent to your e-mail',
-                      value: widget.identifier,
-                      onConfirm: () {
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const HomePage(),
-                          ),
-                          (route) => false,
-                        );
-                      },
-                    ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 30),
+                  child: Column(
+                    children: [
+                      FadeSlideTransition(
+                        delay: const Duration(milliseconds: 100),
+                        child: _buildVerificationSection(
+                          title: widget.isPhone
+                              ? 'Sent to your phone'
+                              : 'Sent to your e-mail',
+                          value: widget.identifier,
+                          onConfirm: (otp) {
+                            _verifyOtp(otp);
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
+          if (_isLoading)
+            Container(
+              color: Colors.black26,
+              child: const Center(child: CircularProgressIndicator()),
+            ),
         ],
       ),
     );
   }
 
+  String _currentOtp = "";
+
   Widget _buildVerificationSection({
     required String title,
     required String value,
-    required VoidCallback onConfirm,
+    required Function(String) onConfirm,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,40 +176,54 @@ class _LoginOtpPageState extends State<LoginOtpPage> {
 
         // OTP Input Fields
         LoginOtpInputRow(
-          onChanged: (isComplete) {
+          onChanged: (isComplete, otp) {
             setState(() {
               _isCodeComplete = isComplete;
+              _currentOtp = otp;
+              if (isComplete) {
+                _verifyOtp(otp);
+              }
             });
           },
         ),
 
         const SizedBox(height: 10),
-        const LoginOtpTimerControl(),
+        LoginOtpTimerControl(onResend: () async {
+          setState(() => _isLoading = true);
+          final res = await ApiService.sendOtp(
+            email: widget.isPhone ? null : widget.identifier,
+            phone: widget.isPhone ? widget.identifier : null,
+          );
+          if (mounted) {
+            setState(() => _isLoading = false);
+            if (res['success'] == true) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('OTP Resent!'), backgroundColor: Colors.green),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(res['error'] ?? 'Resend failed'), backgroundColor: Colors.red),
+              );
+            }
+          }
+        }),
 
         const SizedBox(height: 30),
         SizedBox(
           width: double.infinity,
           height: 55,
           child: ScaleOnTap(
-            onTap: () {
-              setState(() {
-                _isVerified = true;
-              });
-              onConfirm();
-            },
-            child: ElevatedButton(
-              onPressed: null, // Managed by ScaleOnTap
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _isVerified
+            onTap: _isVerified ? null : () => onConfirm(_currentOtp),
+            child: Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: _isVerified
                     ? Colors.white
                     : (_isCodeComplete ? const Color(0xFF2E4C9D) : Colors.grey),
-                foregroundColor: _isCodeComplete ? Colors.white : Colors.white70,
-                side: _isVerified
-                    ? const BorderSide(color: Colors.green, width: 2)
+                border: _isVerified
+                    ? Border.all(color: Colors.green, width: 2)
                     : null,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
+                borderRadius: BorderRadius.circular(30),
               ),
               child: _isVerified
                   ? const Icon(
@@ -200,7 +248,7 @@ class _LoginOtpPageState extends State<LoginOtpPage> {
 }
 
 class LoginOtpInputRow extends StatefulWidget {
-  final Function(bool) onChanged;
+  final Function(bool, String) onChanged;
   const LoginOtpInputRow({super.key, required this.onChanged});
 
   @override
@@ -267,8 +315,9 @@ class _LoginOtpInputRowState extends State<LoginOtpInputRow> {
                 _focusNodes[index - 1].requestFocus();
               }
 
-              bool isComplete = _controllers.every((c) => c.text.isNotEmpty);
-              widget.onChanged(isComplete);
+              String code = _controllers.map((c) => c.text).join();
+              bool isComplete = code.isNotEmpty;
+              widget.onChanged(isComplete, code);
             },
           ),
         );
@@ -278,7 +327,8 @@ class _LoginOtpInputRowState extends State<LoginOtpInputRow> {
 }
 
 class LoginOtpTimerControl extends StatefulWidget {
-  const LoginOtpTimerControl({super.key});
+  final VoidCallback onResend;
+  const LoginOtpTimerControl({super.key, required this.onResend});
 
   @override
   State<LoginOtpTimerControl> createState() => _LoginOtpTimerControlState();
@@ -338,6 +388,7 @@ class _LoginOtpTimerControlState extends State<LoginOtpTimerControl> {
                     _secondsRemaining = 90;
                     _startTimer();
                   });
+                  widget.onResend();
                 }
               : null,
           child: Text(

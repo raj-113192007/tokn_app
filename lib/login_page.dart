@@ -4,6 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'login_otp_page.dart';
 import 'forgot_password_page.dart';
 import 'widgets/animation_utils.dart';
+import 'services/api_service.dart';
+import 'home_page.dart';
+import 'signup_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -18,6 +21,7 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _isPasswordVisible = false;
   bool _isLoginEnabled = false;
+  bool _isLoading = false;
 
   // Error messages
   String? _identifierError;
@@ -168,25 +172,30 @@ class _LoginPageState extends State<LoginPage> {
                           width: double.infinity,
                           height: 55,
                           child: ScaleOnTap(
-                            onTap: _isLoginEnabled
-                                ? () {
-                                    final input = _identifierController.text
-                                        .trim();
-                                    bool isPhone = RegExp(
-                                      r'^\d{10}$',
-                                    ).hasMatch(input);
+                                onTap: (_isLoginEnabled && !_isLoading)
+                                    ? () async {
+                                        setState(() => _isLoading = true);
+                                        final result = await ApiService.login(
+                                          identifier: _identifierController.text.trim(),
+                                          password: _passwordController.text,
+                                        );
 
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => LoginOtpPage(
-                                          identifier: input,
-                                          isPhone: isPhone,
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                : null,
+                                        if (mounted) {
+                                          setState(() => _isLoading = false);
+                                          if (result['success'] == true) {
+                                            Navigator.pushAndRemoveUntil(
+                                              context,
+                                              MaterialPageRoute(builder: (context) => const HomePage()),
+                                              (route) => false,
+                                            );
+                                          } else {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(content: Text(result['error'] ?? 'Login failed'), backgroundColor: Colors.red),
+                                            );
+                                          }
+                                        }
+                                      }
+                                    : null,
                             child: Container(
                               width: double.infinity,
                               height: 55,
@@ -207,6 +216,95 @@ class _LoginPageState extends State<LoginPage> {
                                     fontWeight: FontWeight.bold,
                                     color: _isLoginEnabled
                                         ? const Color(0xFF1A1A1A)
+                                        : Colors.grey,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 15),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 55,
+                          child: ScaleOnTap(
+                            onTap: (_identifierController.text.isNotEmpty && !_isLoading)
+                                ? () async {
+                                    final input = _identifierController.text.trim();
+                                    bool isPhone = RegExp(r'^\d{10}$').hasMatch(input);
+                                    
+                                    setState(() => _isLoading = true);
+                                    final res = await ApiService.sendOtp(
+                                      email: isPhone ? null : input,
+                                      phone: isPhone ? input : null,
+                                    );
+                                    
+                                    if (mounted) {
+                                      setState(() => _isLoading = false);
+                                      if (res['success'] == true) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => LoginOtpPage(
+                                              identifier: input,
+                                              isPhone: isPhone,
+                                            ),
+                                          ),
+                                        );
+                                      } else if (res['error'] == 'User not found') {
+                                        // Show Dialog to redirect to Signup
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: const Text('Account not found'),
+                                            content: const Text('This email/phone is not registered. Would you like to create an account?'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context),
+                                                child: const Text('Cancel'),
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  Navigator.pop(context);
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(builder: (context) => const SignupPage()),
+                                                  );
+                                                },
+                                                child: const Text('Sign Up'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text(res['error'] ?? 'Failed to send OTP'), backgroundColor: Colors.red),
+                                        );
+                                      }
+                                    }
+                                  }
+                                : null,
+                            child: Container(
+                              width: double.infinity,
+                              height: 55,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                border: Border.all(
+                                  color: _identifierController.text.isNotEmpty
+                                      ? const Color(0xFF2E4C9D)
+                                      : Colors.grey,
+                                  width: 2,
+                                ),
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'Sign in with OTP',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: _identifierController.text.isNotEmpty
+                                        ? const Color(0xFF2E4C9D)
                                         : Colors.grey,
                                   ),
                                 ),
@@ -246,6 +344,11 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
+          if (_isLoading)
+            Container(
+              color: Colors.black26,
+              child: const Center(child: CircularProgressIndicator()),
+            ),
         ],
       ),
     );

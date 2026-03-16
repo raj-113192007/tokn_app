@@ -3,12 +3,16 @@ import 'package:google_fonts/google_fonts.dart';
 import 'widgets/animation_utils.dart';
 import 'widgets/glass_bottom_bar.dart';
 
+import 'services/api_service.dart';
+
 class HospitalDetailsPage extends StatelessWidget {
+  final String hospitalId;
   final String hospitalName;
   final String hospitalImage;
 
   const HospitalDetailsPage({
     super.key,
+    required this.hospitalId,
     required this.hospitalName,
     required this.hospitalImage,
   });
@@ -375,7 +379,49 @@ class HospitalDetailsPage extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15),
           child: ScaleOnTap(
-            onTap: () {},
+            onTap: () async {
+              // Show a date/time picker or just use current for now as a test
+              final now = DateTime.now();
+              final dateStr = "${now.year}-${now.month}-${now.day}";
+              final timeStr = "${now.hour}:${now.minute}";
+
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const Center(child: CircularProgressIndicator()),
+              );
+
+              final result = await ApiService.createBooking(
+                hospitalId: hospitalId,
+                date: dateStr,
+                time: timeStr,
+              );
+
+              if (context.mounted) {
+                Navigator.pop(context); // Close loading
+
+                if (result['success'] == true) {
+                  final token = result['data']['token_number'];
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Booking Confirmed!'),
+                      content: Text('Your Token Number is: $token'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('OK'),
+                        ),
+                      ],
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(result['error'] ?? 'Booking failed'), backgroundColor: Colors.red),
+                  );
+                }
+              }
+            },
             child: Container(
               height: 55,
               width: double.infinity,

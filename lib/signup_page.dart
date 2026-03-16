@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'otp_verification_page.dart';
 import 'widgets/animation_utils.dart';
+import 'services/api_service.dart';
+import 'home_page.dart'; // To navigate on success
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -24,6 +26,7 @@ class _SignupPageState extends State<SignupPage> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isFormValid = false;
+  bool _isLoading = false;
 
   // Error messages for validation
   String? _nameError;
@@ -280,26 +283,43 @@ class _SignupPageState extends State<SignupPage> {
                                       width: double.infinity,
                                       height: 55,
                                       child: ScaleOnTap(
-                                        onTap: _isFormValid
+                                        onTap: (_isFormValid && !_isLoading)
                                             ? () async {
-                                                final prefs = await SharedPreferences.getInstance();
-                                                await prefs.setString('user_name', _nameController.text.trim());
+                                                setState(() => _isLoading = true);
                                                 
+                                                final result = await ApiService.signup(
+                                                  fullName: _nameController.text.trim(),
+                                                  email: _emailController.text.trim(),
+                                                  phone: _phoneController.text.trim(),
+                                                  password: _passwordController.text,
+                                                );
+
                                                 if (mounted) {
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          OtpVerificationPage(
-                                                            email:
-                                                                _emailController
-                                                                    .text,
-                                                            phoneNumber:
-                                                                _phoneController
-                                                                    .text,
+                                                  setState(() => _isLoading = false);
+                                                  
+                                                  if (result['success'] == true) {
+                                                    // Success: Navigate to OTP Verification
+                                                    try {
+                                                      Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (context) => OtpVerificationPage(
+                                                            email: _emailController.text.trim(),
+                                                            phoneNumber: _phoneController.text.trim(),
                                                           ),
-                                                    ),
-                                                  );
+                                                        ),
+                                                      );
+                                                    } catch (navError) {
+                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                        SnackBar(content: Text('Navigation error: $navError'), backgroundColor: Colors.orange),
+                                                      );
+                                                    }
+                                                  } else {
+                                                    // Error: Show message from backend
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(content: Text(result['error'] ?? 'Signup failed'), backgroundColor: Colors.red),
+                                                    );
+                                                  }
                                                 }
                                               }
                                             : null,

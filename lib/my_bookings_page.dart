@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'widgets/animation_utils.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:home_widget/home_widget.dart';
+import 'services/api_service.dart';
 
 class MyBookingsPage extends StatefulWidget {
   const MyBookingsPage({super.key});
@@ -12,11 +14,50 @@ class MyBookingsPage extends StatefulWidget {
 
 class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  List<dynamic> _allBookings = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _fetchBookings();
+  }
+
+  Future<void> _fetchBookings() async {
+    setState(() => _isLoading = true);
+    final result = await ApiService.getBookings();
+    if (mounted) {
+      setState(() {
+        if (result['success'] == true) {
+          _allBookings = result['data'];
+          _updateHomeWidget(_allBookings);
+        }
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _updateHomeWidget(List<dynamic> bookings) async {
+    try {
+      final upcomingBookings = bookings.where((b) => 
+        b['status'] == 'Pending' || b['status'] == 'Confirmed'
+      ).toList();
+
+      if (upcomingBookings.isNotEmpty) {
+        final b = upcomingBookings.first;
+        await HomeWidget.saveWidgetData<String>('token', b['token_number'] ?? 'N/A');
+        await HomeWidget.saveWidgetData<String>('hospital', b['hospital']?['name'] ?? 'Hospital');
+        await HomeWidget.saveWidgetData<String>('time', "${b['booking_date'].split('T')[0]} • ${b['booking_time']}");
+      } else {
+        await HomeWidget.saveWidgetData<String>('token', 'No Upcoming');
+        await HomeWidget.saveWidgetData<String>('hospital', '-');
+        await HomeWidget.saveWidgetData<String>('time', '-');
+      }
+      await HomeWidget.updateWidget(name: 'TokenWidgetProvider');
+    } catch (e) {
+      debugPrint('Error updating Home Widget: $e');
+    }
   }
 
   @override
@@ -71,32 +112,11 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
   }
 
   Widget _buildUpcomingList() {
-    final upcomingBookings = [
-      {
-        'hospital': 'City General Hospital',
-        'dept': 'Cardiology Department',
-        'token': 'R34',
-        'doctor': 'Dr. Sarah Jenkins',
-        'patient': 'John Doe',
-        'time': 'Oct 28, 10:00 AM - 11:00 AM',
-      },
-      {
-        'hospital': 'St. Mary\'s Specialty Clinic',
-        'dept': 'Pediatrics',
-        'token': 'A56',
-        'doctor': 'Dr. Robert Chen',
-        'patient': 'Emily Smith',
-        'time': 'Nov 02, 02:15 PM - 03:45 PM',
-      },
-      {
-        'hospital': 'Wellness Care Center',
-        'dept': 'Dermatology',
-        'token': 'B12',
-        'doctor': 'Dr. Alice Wong',
-        'patient': 'John Doe',
-        'time': 'Nov 05, 05:00 AM - 05:30 AM',
-      },
-    ];
+    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    
+    final upcomingBookings = _allBookings.where((b) => 
+      b['status'] == 'Pending' || b['status'] == 'Confirmed'
+    ).toList();
 
     return AnimationLimiter(
       child: ListView.builder(
@@ -106,13 +126,21 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
           if (index == upcomingBookings.length) {
             return _buildNotificationBox();
           }
+          final b = upcomingBookings[index];
           return AnimationConfiguration.staggeredList(
             position: index,
             duration: const Duration(milliseconds: 500),
             child: FadeInAnimation(
               child: SlideAnimation(
                 verticalOffset: 20,
-                child: _buildUpcomingCard(upcomingBookings[index]),
+                child: _buildUpcomingCard({
+                  'hospital': b['hospital']?['name'] ?? 'Hospital',
+                  'dept': b['hospital']?['categories']?.join(', ') ?? 'General',
+                  'token': b['token_number'] ?? 'N/A',
+                  'doctor': 'On Duty Doctor',
+                  'patient': 'You',
+                  'time': "${b['booking_date'].split('T')[0]} • ${b['booking_time']}",
+                }),
               ),
             ),
           );
@@ -224,37 +252,29 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
   }
 
   Widget _buildCompletedList() {
-    final completedBookings = [
-      {
-        'hospital': 'City General Hospital',
-        'doctor': 'Dr. Sarah Mitchell',
-        'patient': 'John Doe',
-        'date': 'Oct 24, 2023, 10:00 AM',
-        'token': 'R31',
-        'image': 'https://images.unsplash.com/photo-1587350859728-117622bc75fb?w=800',
-      },
-      {
-        'hospital': 'St. Mary\'s Specialty Clinic',
-        'doctor': 'Dr. Robert Chen',
-        'patient': 'John Doe',
-        'date': 'Oct 15, 2023, 03:15 PM',
-        'token': 'A11',
-        'image': 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800',
-      },
-    ];
+    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    final completedBookings = _allBookings.where((b) => b['status'] == 'Completed').toList();
 
     return AnimationLimiter(
       child: ListView.builder(
         padding: const EdgeInsets.all(20),
         itemCount: completedBookings.length,
         itemBuilder: (context, index) {
+          final b = completedBookings[index];
           return AnimationConfiguration.staggeredList(
             position: index,
             duration: const Duration(milliseconds: 500),
             child: FadeInAnimation(
               child: SlideAnimation(
                 verticalOffset: 20,
-                child: _buildHistoryCard(completedBookings[index], 'COMPLETED', Colors.green),
+                child: _buildHistoryCard({
+                  'hospital': b['hospital']?['name'] ?? 'Hospital',
+                  'doctor': 'On Duty Doctor',
+                  'patient': 'You',
+                  'date': b['booking_date'].split('T')[0],
+                  'token': b['token_number'] ?? 'N/A',
+                  'image': b['hospital']?['image'] ?? 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800',
+                }, 'COMPLETED', Colors.green),
               ),
             ),
           );
@@ -264,29 +284,29 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
   }
 
   Widget _buildCancelledList() {
-    final cancelledBookings = [
-      {
-        'hospital': 'Downtown Wellness Center',
-        'doctor': 'Dr. Emily Wong',
-        'patient': 'John Doe',
-        'date': 'Sept 30, 2023, 09:30 AM',
-        'token': 'C22',
-        'image': 'https://images.unsplash.com/photo-1538108197017-c10d7373950f?w=800',
-      },
-    ];
+    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    final cancelledBookings = _allBookings.where((b) => b['status'] == 'Cancelled').toList();
 
     return AnimationLimiter(
       child: ListView.builder(
         padding: const EdgeInsets.all(20),
         itemCount: cancelledBookings.length,
         itemBuilder: (context, index) {
+          final b = cancelledBookings[index];
           return AnimationConfiguration.staggeredList(
             position: index,
             duration: const Duration(milliseconds: 500),
             child: FadeInAnimation(
               child: SlideAnimation(
                 verticalOffset: 20,
-                child: _buildHistoryCard(cancelledBookings[index], 'CANCELLED', Colors.redAccent),
+                child: _buildHistoryCard({
+                  'hospital': b['hospital']?['name'] ?? 'Hospital',
+                  'doctor': 'On Duty Doctor',
+                  'patient': 'You',
+                  'date': b['booking_date'].split('T')[0],
+                  'token': b['token_number'] ?? 'N/A',
+                  'image': b['hospital']?['image'] ?? 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800',
+                }, 'CANCELLED', Colors.redAccent),
               ),
             ),
           );

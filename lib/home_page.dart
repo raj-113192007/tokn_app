@@ -9,6 +9,7 @@ import 'my_bookings_page.dart';
 import 'profile_page.dart';
 import 'widgets/animation_utils.dart';
 import 'widgets/glass_bottom_bar.dart';
+import 'services/api_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,11 +21,27 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   String _userName = 'User';
+  List<dynamic> _realHospitals = [];
+  bool _isLoadingHospitals = true;
 
   @override
   void initState() {
     super.initState();
     _loadUserName();
+    _fetchHospitals();
+  }
+
+  Future<void> _fetchHospitals() async {
+    setState(() => _isLoadingHospitals = true);
+    final result = await ApiService.getHospitals();
+    if (mounted) {
+      setState(() {
+        if (result['success'] == true) {
+          _realHospitals = result['data'];
+        }
+        _isLoadingHospitals = false;
+      });
+    }
   }
 
   Future<void> _loadUserName() async {
@@ -306,21 +323,33 @@ class _HomePageState extends State<HomePage> {
                 // Hospitals Section
                 _buildSectionHeader('Hospitals'),
                 const SizedBox(height: 15),
-                SizedBox(
-                  height: 160,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: _hospitals.length,
-                    itemBuilder: (context, index) {
-                      return _buildHospitalCard(
-                        context,
-                        _hospitals[index]['name']!,
-                        _hospitals[index]['image']!,
-                      );
-                    },
-                  ),
-                ),
+                _isLoadingHospitals
+                    ? const Center(child: CircularProgressIndicator())
+                    : _realHospitals.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Text(
+                              'No hospitals found near you.',
+                              style: GoogleFonts.poppins(color: Colors.grey),
+                            ),
+                          )
+                        : SizedBox(
+                            height: 160,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              itemCount: _realHospitals.length,
+                              itemBuilder: (context, index) {
+                                final h = _realHospitals[index];
+                                return _buildHospitalCard(
+                                  context,
+                                  h['_id'] ?? '',
+                                  h['name'] ?? 'Hospital',
+                                  h['image'] ?? 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=400',
+                                );
+                              },
+                            ),
+                          ),
 
                 const SizedBox(height: 25),
 
@@ -352,13 +381,14 @@ class _HomePageState extends State<HomePage> {
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: _hospitals.length,
+                    itemCount: _realHospitals.length,
                     itemBuilder: (context, index) {
-                      final reversedIndex = (_hospitals.length - 1) - index;
+                      final h = _realHospitals[(_realHospitals.length - 1) - index];
                       return _buildHospitalCard(
                         context,
-                        _hospitals[reversedIndex]['name']!,
-                        _hospitals[reversedIndex]['image']!,
+                        h['_id'] ?? '',
+                        h['name'] ?? 'Hospital',
+                        h['image'] ?? 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=400',
                       );
                     },
                   ),
@@ -403,13 +433,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildHospitalCard(BuildContext context, String name, String imageUrl) {
+  Widget _buildHospitalCard(BuildContext context, String id, String name, String imageUrl) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => HospitalDetailsPage(
+              hospitalId: id,
               hospitalName: name,
               hospitalImage: imageUrl,
             ),
