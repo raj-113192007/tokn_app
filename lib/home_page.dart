@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -20,6 +21,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+  late PageController _pageController;
   String _userName = 'User';
   List<dynamic> _realHospitals = [];
   bool _isLoadingHospitals = true;
@@ -27,8 +29,15 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _selectedIndex);
     _loadUserName();
     _fetchHospitals();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchHospitals() async {
@@ -145,25 +154,20 @@ class _HomePageState extends State<HomePage> {
       extendBody: true,
       body: SafeArea(
         bottom: false,
-        child: IndexedStack(
-          index: _selectedIndex,
+        child: PageView(
+          controller: _pageController,
+          onPageChanged: (index) {
+            if (_selectedIndex != index) {
+              HapticFeedback.lightImpact();
+              setState(() {
+                _selectedIndex = index;
+              });
+            }
+          },
           children: pages,
         ),
       ),
-      bottomNavigationBar: GlassBottomBar(
-        height: 60,
-        backgroundColor: const Color(0xFF2E4C9D).withOpacity(0.85),
-        margin: const EdgeInsets.fromLTRB(25, 0, 25, 20),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildNavItem(Icons.home_filled, 'Home', _selectedIndex == 0, 0),
-            _buildNavItem(Icons.receipt_long, 'Bookings', _selectedIndex == 1, 1),
-            _buildNavItem(Icons.chat_bubble_outline, 'Chat', _selectedIndex == 2, 2),
-            _buildNavItem(Icons.person_outline, 'Profile', _selectedIndex == 3, 3),
-          ],
-        ),
-      ),
+      bottomNavigationBar: _buildSlidingNavBar(),
     );
   }
 
@@ -540,48 +544,102 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, bool isActive, int index) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.elasticOut, // Elastic curve for "jiggle" effect
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? Colors.white.withOpacity(0.1) : Colors.transparent, // Very subtle background
-          borderRadius: BorderRadius.circular(25),
-          border: isActive ? Border.all(color: Colors.white.withOpacity(0.1), width: 0.5) : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedScale(
-              scale: isActive ? 1.2 : 1.0, // Increased scale for more prominence
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.elasticOut, // Elastic scale for jiggle
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 26,
-              ),
-            ),
-            if (isActive) ...[
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+  Widget _buildSlidingNavBar() {
+    final List<Map<String, dynamic>> navItems = [
+      {'icon': Icons.home_filled, 'label': 'Home'},
+      {'icon': Icons.receipt_long, 'label': 'Bookings'},
+      {'icon': Icons.chat_bubble_outline, 'label': 'Chat'},
+      {'icon': Icons.person_outline, 'label': 'Profile'},
+    ];
+
+    return GlassBottomBar(
+      height: 64,
+      backgroundColor: const Color(0xFF2E4C9D).withOpacity(0.92),
+      margin: const EdgeInsets.fromLTRB(25, 0, 25, 20),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final double itemWidth = constraints.maxWidth / navItems.length;
+          final double pillWidth = itemWidth * 0.72;
+          final double pillLeft =
+              itemWidth * _selectedIndex + (itemWidth - pillWidth) / 2;
+
+          return Stack(
+            children: [
+              // Sliding pill indicator
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 380),
+                curve: Curves.easeInOutCubic,
+                left: pillLeft,
+                top: 10,
+                bottom: 10,
+                width: pillWidth,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.25),
+                      width: 0.8,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.white.withOpacity(0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
                 ),
               ),
+              // Nav items
+              Row(
+                children: List.generate(navItems.length, (index) {
+                  final bool isActive = _selectedIndex == index;
+                  return Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        if (_selectedIndex != index) {
+                          HapticFeedback.lightImpact();
+                          _pageController.animateToPage(
+                            index,
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.easeInOutCubic,
+                          );
+                        }
+                      },
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AnimatedScale(
+                            scale: isActive ? 1.18 : 1.0,
+                            duration: const Duration(milliseconds: 400),
+                            curve: Curves.elasticOut,
+                            child: Icon(
+                              navItems[index]['icon'] as IconData,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          AnimatedDefaultTextStyle(
+                            duration: const Duration(milliseconds: 250),
+                            style: GoogleFonts.poppins(
+                              color: Colors.white.withOpacity(isActive ? 1.0 : 0.55),
+                              fontSize: isActive ? 10.5 : 10,
+                              fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
+                            ),
+                            child: Text(navItems[index]['label'] as String),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ),
             ],
-          ],
-        ),
+          );
+        },
       ),
     );
   }
