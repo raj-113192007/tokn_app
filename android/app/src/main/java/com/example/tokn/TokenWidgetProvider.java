@@ -13,14 +13,16 @@ import es.antonborri.home_widget.HomeWidgetPlugin;
 public class TokenWidgetProvider extends AppWidgetProvider {
 
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
-        String widgetToken    = HomeWidgetPlugin.Companion.getData(context).getString("token",    "N/A");
-        String widgetHospital = HomeWidgetPlugin.Companion.getData(context).getString("hospital", "N/A");
-        String widgetTime     = HomeWidgetPlugin.Companion.getData(context).getString("time",     "N/A");
+        String hospitalName  = HomeWidgetPlugin.Companion.getData(context).getString("hospital", "City General");
+        String servingNumber = HomeWidgetPlugin.Companion.getData(context).getString("serving",  "42");
+        String mineNumber    = HomeWidgetPlugin.Companion.getData(context).getString("mine",     "48");
+        String waitTime      = HomeWidgetPlugin.Companion.getData(context).getString("wait_time", "15");
 
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-        views.setTextViewText(R.id.widget_token,    widgetToken);
-        views.setTextViewText(R.id.widget_hospital, "Hospital: " + widgetHospital);
-        views.setTextViewText(R.id.widget_time,     "Time: "     + widgetTime);
+        views.setTextViewText(R.id.widget_hospital,    hospitalName);
+        views.setTextViewText(R.id.widget_serving_num, "#" + servingNumber);
+        views.setTextViewText(R.id.widget_mine_num,    "#" + mineNumber);
+        views.setTextViewText(R.id.widget_wait_time,   "~" + waitTime + " mins wait");
 
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }

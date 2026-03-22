@@ -50,25 +50,30 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _initApp() async {
-    // Wait for initial animation
-    await Future.delayed(const Duration(seconds: 1));
-    
-    // Request Essential Permissions
-    Map<Permission, PermissionStatus> statuses = await [
-      Permission.location,
-      Permission.notification,
-      Permission.phone,
-      Permission.storage,
-    ].request();
+    try {
+      // Wait for initial animation
+      await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
+      
+      // Request Essential Permissions with a timeout or handled individually
+      // Note: If any permission hangs, we still want to move forward
+      await [
+        Permission.location,
+        Permission.notification,
+        Permission.phone,
+      ].request().timeout(const Duration(seconds: 5), onTimeout: () => {});
 
-    // Small delay for UX
-    await Future.delayed(const Duration(seconds: 1));
+    } catch (e) {
+      debugPrint("Permission request error: $e");
+    } finally {
+      // Small delay for UX transition
+      await Future.delayed(const Duration(milliseconds: 500));
 
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const WelcomePage()),
-      );
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const WelcomePage()),
+        );
+      }
     }
   }
 

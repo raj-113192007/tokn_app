@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:tokn/splash_screen.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:tokn/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   HomeWidget.setAppGroupId('tokn_app_group');
+  
+  try {
+    await NotificationService.init();
+    await NotificationService.schedulePeriodicNotification();
+    NotificationService.showLiveAlert(); // Don't await the alert show to avoid startup delay
+  } catch (e) {
+    debugPrint("Notification initialization error: $e");
+  }
+
   runApp(const MyApp());
 }
 
