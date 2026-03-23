@@ -4,9 +4,12 @@ import 'widgets/animation_utils.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:home_widget/home_widget.dart';
 import 'services/api_service.dart';
+import 'services/scroll_notifier.dart';
 
 class MyBookingsPage extends StatefulWidget {
-  const MyBookingsPage({super.key});
+  final ScrollNotifier? scrollNotifier;
+
+  const MyBookingsPage({super.key, this.scrollNotifier});
 
   @override
   State<MyBookingsPage> createState() => _MyBookingsPageState();
@@ -16,11 +19,45 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
   late TabController _tabController;
   List<dynamic> _allBookings = [];
   bool _isLoading = true;
+  late final ScrollController _upcomingScrollController;
+  late final ScrollController _completedScrollController;
+  late final ScrollController _cancelledScrollController;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _upcomingScrollController = ScrollController();
+    _completedScrollController = ScrollController();
+    _cancelledScrollController = ScrollController();
+
+    // Register scroll controllers so the bottom bar can hide/show.
+    // Each booking sub-tab gets its own page id, and we update the notifier's
+    // current page when the TabBar index changes.
+    widget.scrollNotifier?.registerPageController('bookings_upcoming', _upcomingScrollController);
+    widget.scrollNotifier?.registerPageController('bookings_completed', _completedScrollController);
+    widget.scrollNotifier?.registerPageController('bookings_cancelled', _cancelledScrollController);
+
+    // Ensure bar starts visible when entering this page.
+    widget.scrollNotifier?.reset();
+    widget.scrollNotifier?.setCurrentPage('bookings_upcoming');
+
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+
+      widget.scrollNotifier?.reset();
+      switch (_tabController.index) {
+        case 0:
+          widget.scrollNotifier?.setCurrentPage('bookings_upcoming');
+          break;
+        case 1:
+          widget.scrollNotifier?.setCurrentPage('bookings_completed');
+          break;
+        case 2:
+          widget.scrollNotifier?.setCurrentPage('bookings_cancelled');
+          break;
+      }
+    });
     _fetchBookings();
   }
 
@@ -63,6 +100,12 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
   @override
   void dispose() {
     _tabController.dispose();
+    widget.scrollNotifier?.unregisterPageController('bookings_upcoming');
+    widget.scrollNotifier?.unregisterPageController('bookings_completed');
+    widget.scrollNotifier?.unregisterPageController('bookings_cancelled');
+    _upcomingScrollController.dispose();
+    _completedScrollController.dispose();
+    _cancelledScrollController.dispose();
     super.dispose();
   }
 
@@ -121,6 +164,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
     return AnimationLimiter(
       child: ListView.builder(
         padding: const EdgeInsets.all(20),
+        controller: _upcomingScrollController,
         itemCount: upcomingBookings.length + 1,
         itemBuilder: (context, index) {
           if (index == upcomingBookings.length) {
@@ -258,6 +302,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
     return AnimationLimiter(
       child: ListView.builder(
         padding: const EdgeInsets.all(20),
+        controller: _completedScrollController,
         itemCount: completedBookings.length,
         itemBuilder: (context, index) {
           final b = completedBookings[index];
@@ -290,6 +335,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
     return AnimationLimiter(
       child: ListView.builder(
         padding: const EdgeInsets.all(20),
+        controller: _cancelledScrollController,
         itemCount: cancelledBookings.length,
         itemBuilder: (context, index) {
           final b = cancelledBookings[index];

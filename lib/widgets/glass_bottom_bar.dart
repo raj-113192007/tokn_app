@@ -23,6 +23,7 @@ class GlassBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Color baseBackground = backgroundColor ?? Colors.white;
     return Container(
       margin: margin,
       height: height,
@@ -42,10 +43,12 @@ class GlassBottomBar extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
           child: Container(
             decoration: BoxDecoration(
-              color: backgroundColor ?? Colors.white.withOpacity(opacity),
+              // Always apply the provided `opacity` so the glass/blur effect
+              // remains visible even when a `backgroundColor` is passed in.
+              color: baseBackground.withOpacity(opacity),
               borderRadius: BorderRadius.circular(borderRadius),
               border: Border.all(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withOpacity(0.18),
                 width: 0.8,
               ),
             ),

@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'widgets/animation_utils.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'services/scroll_notifier.dart';
 
 class MessagesPage extends StatefulWidget {
-  const MessagesPage({super.key});
+  final ScrollNotifier? scrollNotifier;
+
+  const MessagesPage({super.key, this.scrollNotifier});
 
   @override
   State<MessagesPage> createState() => _MessagesPageState();
@@ -12,16 +15,22 @@ class MessagesPage extends StatefulWidget {
 
 class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late final ScrollController _messagesScrollController;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _messagesScrollController = ScrollController();
+    // Register scroll controller so the bottom bar can hide/show on this tab.
+    widget.scrollNotifier?.registerPageController('messages', _messagesScrollController);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    widget.scrollNotifier?.unregisterPageController('messages');
+    _messagesScrollController.dispose();
     super.dispose();
   }
 
@@ -136,6 +145,7 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
           Expanded(
             child: AnimationLimiter(
               child: ListView.builder(
+                controller: _messagesScrollController,
                 padding: const EdgeInsets.only(top: 10),
                 itemCount: _chats.where((chat) => chat['isReception'] == true).length,
                 itemBuilder: (context, index) {

@@ -3,9 +3,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'widgets/animation_utils.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'services/scroll_notifier.dart';
+import 'settings_page.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final ScrollNotifier? scrollNotifier;
+
+  const ProfilePage({super.key, this.scrollNotifier});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -14,11 +18,22 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   String _userName = 'Alex Johnson';
   String _userEmail = 'alex.johnson@email.com';
+  late final ScrollController _profileScrollController;
 
   @override
   void initState() {
     super.initState();
+    _profileScrollController = ScrollController();
+    // Register scroll controller so the bottom bar can hide/show on this tab.
+    widget.scrollNotifier?.registerPageController('profile', _profileScrollController);
     _loadUserData();
+  }
+
+  @override
+  void dispose() {
+    widget.scrollNotifier?.unregisterPageController('profile');
+    _profileScrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserData() async {
@@ -50,7 +65,13 @@ class _ProfilePageState extends State<ProfilePage> {
         centerTitle: true,
         actions: [
           ScaleOnTap(
-            onTap: () {},
+            onTap: () {
+              widget.scrollNotifier?.reset();
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsPage()),
+              );
+            },
             child: const Padding(
               padding: EdgeInsets.only(right: 20),
               child: Icon(Icons.settings_outlined, color: Color(0xFF2E4C9D)),
@@ -60,6 +81,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       body: AnimationLimiter(
         child: SingleChildScrollView(
+          controller: _profileScrollController,
           padding: const EdgeInsets.symmetric(horizontal: 25),
           child: Column(
             children: AnimationConfiguration.toStaggeredList(

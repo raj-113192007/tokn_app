@@ -9,8 +9,9 @@ import 'messages_page.dart';
 import 'my_bookings_page.dart';
 import 'profile_page.dart';
 import 'widgets/animation_utils.dart';
-import 'widgets/glass_bottom_bar.dart';
+import 'widgets/hideable_bottom_bar.dart';
 import 'services/api_service.dart';
+import 'services/scroll_notifier.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -22,6 +23,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   late PageController _pageController;
+  late ScrollNotifier _scrollNotifier;
+  late ScrollController _homePageScrollController;
   String _userName = 'User';
   List<dynamic> _realHospitals = [];
   bool _isLoadingHospitals = true;
@@ -30,6 +33,10 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _selectedIndex);
+    _scrollNotifier = ScrollNotifier();
+    _homePageScrollController = ScrollController();
+    _scrollNotifier.registerPageController('home', _homePageScrollController);
+    _scrollNotifier.setCurrentPage('home');
     _loadUserName();
     _fetchHospitals();
   }
@@ -37,6 +44,8 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _pageController.dispose();
+    _homePageScrollController.dispose();
+    _scrollNotifier.dispose();
     super.dispose();
   }
 
@@ -58,6 +67,15 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _userName = prefs.getString('user_name') ?? 'User';
     });
+  }
+
+  String _getFirstName() {
+    try {
+      final parts = _userName.split(' ');
+      return parts.isNotEmpty ? parts[0] : 'User';
+    } catch (e) {
+      return 'User';
+    }
   }
 
   void _showCityPicker() {
@@ -144,9 +162,9 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final List<Widget> pages = [
       _buildHomeContent(),
-      const MyBookingsPage(),
-      const MessagesPage(),
-      const ProfilePage(),
+      MyBookingsPage(scrollNotifier: _scrollNotifier),
+      MessagesPage(scrollNotifier: _scrollNotifier),
+      ProfilePage(scrollNotifier: _scrollNotifier),
     ];
 
     return Scaffold(
@@ -162,12 +180,24 @@ class _HomePageState extends State<HomePage> {
               setState(() {
                 _selectedIndex = index;
               });
+              // Update the scroll notifier for the current page
+              final pageIds = ['home', 'bookings', 'messages', 'profile'];
+              _scrollNotifier.setCurrentPage(pageIds[index]);
+              _scrollNotifier.reset();
             }
           },
           children: pages,
         ),
       ),
-      bottomNavigationBar: _buildSlidingNavBar(),
+      bottomNavigationBar: HideableBottomBar(
+        scrollNotifier: _scrollNotifier,
+        height: 74,
+        blur: 20,
+        opacity: 0.42,
+        backgroundColor: const Color(0xFF2E4C9D),
+        margin: const EdgeInsets.fromLTRB(25, 0, 25, 16),
+        child: _buildNavBarContent(),
+      ),
     );
   }
 
@@ -193,7 +223,7 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(width: 10),
               Text(
-                'Hi ${_userName.split(' ')[0]}',
+                'Hi ${_getFirstName()}',
                 style: GoogleFonts.poppins(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -263,6 +293,7 @@ class _HomePageState extends State<HomePage> {
         // Main Content Scrollable Area
         Expanded(
           child: SingleChildScrollView(
+            controller: _homePageScrollController,
             padding: const EdgeInsets.only(bottom: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -544,7 +575,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildSlidingNavBar() {
+  Widget _buildNavBarContent() {
     final List<Map<String, dynamic>> navItems = [
       {'icon': Icons.home_filled, 'label': 'Home'},
       {'icon': Icons.receipt_long, 'label': 'Bookings'},
@@ -552,11 +583,7 @@ class _HomePageState extends State<HomePage> {
       {'icon': Icons.person_outline, 'label': 'Profile'},
     ];
 
-    return GlassBottomBar(
-      height: 64,
-      backgroundColor: const Color(0xFF2E4C9D).withOpacity(0.92),
-      margin: const EdgeInsets.fromLTRB(25, 0, 25, 20),
-      child: LayoutBuilder(
+    return LayoutBuilder(
         builder: (context, constraints) {
           final double itemWidth = constraints.maxWidth / navItems.length;
           final double pillWidth = itemWidth * 0.72;
@@ -570,20 +597,20 @@ class _HomePageState extends State<HomePage> {
                 duration: const Duration(milliseconds: 380),
                 curve: Curves.easeInOutCubic,
                 left: pillLeft,
-                top: 10,
-                bottom: 10,
+                top: 6,
+                bottom: 6,
                 width: pillWidth,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.18),
+                    color: const Color(0xFF6FA8FF).withOpacity(0.22),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.25),
+                      color: const Color(0xFF6FA8FF).withOpacity(0.32),
                       width: 0.8,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.white.withOpacity(0.08),
+                        color: const Color(0xFF6FA8FF).withOpacity(0.18),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -640,8 +667,7 @@ class _HomePageState extends State<HomePage> {
             ],
           );
         },
-      ),
-    );
+      );
   }
 }
 
