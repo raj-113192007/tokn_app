@@ -192,10 +192,11 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: HideableBottomBar(
         scrollNotifier: _scrollNotifier,
         height: 74,
-        blur: 20,
-        opacity: 0.42,
-        backgroundColor: const Color(0xFF2E4C9D),
-        margin: const EdgeInsets.fromLTRB(25, 0, 25, 16),
+        blur: 15,
+        opacity: 0.92,
+        backgroundColor: const Color(0xFF1E40AF),
+        borderRadius: 40,
+        margin: const EdgeInsets.fromLTRB(25, 0, 25, 20),
         child: _buildNavBarContent(),
       ),
     );
@@ -583,91 +584,67 @@ class _HomePageState extends State<HomePage> {
       {'icon': Icons.person_outline, 'label': 'Profile'},
     ];
 
-    return LayoutBuilder(
-        builder: (context, constraints) {
-          final double itemWidth = constraints.maxWidth / navItems.length;
-          final double pillWidth = itemWidth * 0.72;
-          final double pillLeft =
-              itemWidth * _selectedIndex + (itemWidth - pillWidth) / 2;
-
-          return Stack(
-            children: [
-              // Sliding pill indicator
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 380),
-                curve: Curves.easeInOutCubic,
-                left: pillLeft,
-                top: 6,
-                bottom: 6,
-                width: pillWidth,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF6FA8FF).withOpacity(0.22),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: const Color(0xFF6FA8FF).withOpacity(0.32),
-                      width: 0.8,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF6FA8FF).withOpacity(0.18),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: List.generate(navItems.length, (index) {
+          final bool isActive = _selectedIndex == index;
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              if (_selectedIndex != index) {
+                HapticFeedback.lightImpact();
+                _pageController.animateToPage(
+                  index,
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeInOutCubic,
+                );
+              }
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeInOutCubic,
+              padding: EdgeInsets.symmetric(
+                horizontal: isActive ? 16 : 12,
+                vertical: 10,
+              ),
+              decoration: BoxDecoration(
+                color: isActive ? Colors.white.withOpacity(0.24) : Colors.transparent,
+                borderRadius: BorderRadius.circular(100),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    navItems[index]['icon'] as IconData,
+                    color: Colors.white,
+                    size: 24,
                   ),
-                ),
-              ),
-              // Nav items
-              Row(
-                children: List.generate(navItems.length, (index) {
-                  final bool isActive = _selectedIndex == index;
-                  return Expanded(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        if (_selectedIndex != index) {
-                          HapticFeedback.lightImpact();
-                          _pageController.animateToPage(
-                            index,
-                            duration: const Duration(milliseconds: 500),
-                            curve: Curves.easeInOutCubic,
-                          );
-                        }
-                      },
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          AnimatedScale(
-                            scale: isActive ? 1.18 : 1.0,
-                            duration: const Duration(milliseconds: 400),
-                            curve: Curves.elasticOut,
-                            child: Icon(
-                              navItems[index]['icon'] as IconData,
-                              color: Colors.white,
-                              size: 24,
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 350),
+                    curve: Curves.easeInOutCubic,
+                    child: isActive
+                        ? Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: Text(
+                              navItems[index]['label'] as String,
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 3),
-                          AnimatedDefaultTextStyle(
-                            duration: const Duration(milliseconds: 250),
-                            style: GoogleFonts.poppins(
-                              color: Colors.white.withOpacity(isActive ? 1.0 : 0.55),
-                              fontSize: isActive ? 10.5 : 10,
-                              fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
-                            ),
-                            child: Text(navItems[index]['label'] as String),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ],
               ),
-            ],
+            ),
           );
-        },
-      );
+        }),
+      ),
+    );
   }
 }
 

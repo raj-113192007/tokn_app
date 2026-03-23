@@ -5,6 +5,8 @@ import 'widgets/animation_utils.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'services/scroll_notifier.dart';
 import 'settings_page.dart';
+import 'package:tokn/l10n/app_localizations.dart';
+import 'add_member_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final ScrollNotifier? scrollNotifier;
@@ -175,7 +177,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(height: 25),
                 // Add Family Member Button
                 ScaleOnTap(
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AddMemberPage()),
+                    );
+                  },
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
                     decoration: BoxDecoration(
@@ -195,7 +202,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         const Icon(Icons.add, color: Colors.white, size: 20),
                         const SizedBox(width: 8),
                         Text(
-                          'Add Family Member',
+                          AppLocalizations.of(context)!.addFamilyMemberTitle,
                           style: GoogleFonts.poppins(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -226,6 +233,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(height: 15),
                 // Mobile Section
                 _buildContactCard(Icons.phone_android_outlined, 'Mobile', '+91 9876543210'),
+                const SizedBox(height: 25),
+                // Hospital Wallet Section
+                _buildWalletCard(context),
                 const SizedBox(height: 25),
                 // Ayushman Card
                 _buildAyushmanCard(),
@@ -385,6 +395,199 @@ class _ProfilePageState extends State<ProfilePage> {
           )
         ],
       ),
+    );
+  }
+
+  Widget _buildWalletCard(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.account_balance_wallet, color: Color(0xFF2E4C9D), size: 24),
+                  const SizedBox(width: 12),
+                  Text(
+                    l10n.hospitalWallet,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF1A1A1A),
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                l10n.viewHistory,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF2E4C9D),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7F9FC),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.availableBalance,
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[500],
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '₹2,500',
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF389B66),
+                      ),
+                    ),
+                  ],
+                ),
+                ScaleOnTap(
+                  onTap: () {},
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2E4C9D),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.add_circle_outline, color: Colors.white, size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          l10n.addMoney,
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            l10n.recentTransactions,
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[400],
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildTransactionItem(
+            icon: Icons.receipt_long_outlined,
+            title: 'Token #42 Payment',
+            date: 'Oct 14, 2023',
+            amount: '- ₹500',
+            isNegative: true,
+          ),
+          const Divider(height: 24, color: Color(0xFFF0F0F0)),
+          _buildTransactionItem(
+            icon: Icons.add_circle_outline,
+            title: l10n.addMoney,
+            date: 'Oct 10, 2023',
+            amount: '+ ₹1000',
+            isNegative: false,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransactionItem({
+    required IconData icon,
+    required String title,
+    required String date,
+    required String amount,
+    required bool isNegative,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: isNegative ? const Color(0xFFFFEBEE) : const Color(0xFFE8F5E9),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            icon,
+            color: isNegative ? Colors.redAccent : const Color(0xFF389B66),
+            size: 20,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              Text(
+                date,
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: Colors.grey[500],
+                ),
+              ),
+            ],
+          ),
+        ),
+        Text(
+          amount,
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: isNegative ? Colors.redAccent : const Color(0xFF389B66),
+          ),
+        ),
+      ],
     );
   }
 }
