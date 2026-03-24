@@ -11,6 +11,7 @@ import 'welcome_page.dart';
 import 'edit_profile_page.dart';
 import 'family_members_page.dart';
 import 'package:tokn/services/security_service.dart';
+import 'help_support_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -182,7 +183,12 @@ class _SettingsPageState extends State<SettingsPage> {
               icon: Icons.help_outline,
               title: AppLocalizations.of(context)!.helpCenter,
               subtitle: 'Get help with TokN',
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HelpSupportPage()),
+                );
+              },
             ),
             _buildTile(
               icon: Icons.info_outline,

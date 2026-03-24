@@ -38,6 +38,7 @@ dependencies:
   google_fonts: ^8.0.1
   google_sign_in: ^6.2.1
   flutter_facebook_auth: ^6.1.0
+  shake: ^3.0.0
   permission_handler: ^11.3.1
   flutter_localizations:
     sdk: flutter
