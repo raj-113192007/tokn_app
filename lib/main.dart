@@ -1,33 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart'; // Added for kIsWeb
-import 'package:shake/shake.dart';
 import 'package:tokn/splash_screen.dart';
+
 import 'package:home_widget/home_widget.dart';
-import 'package:tokn/services/notification_service.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+
 import 'package:provider/provider.dart';
 import 'package:tokn/services/language_provider.dart';
 import 'package:tokn/l10n/app_localizations.dart';
 import 'package:tokn/services/security_service.dart';
 import 'package:tokn/widgets/lock_screen.dart';
-import 'help_support_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://wmcyhvbwtqcroolbyozl.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndtY3lodmJ3dHFjcm9vbGJ5b3psIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Mjc2NzQsImV4cCI6MjA5MDAwMzY3NH0.rtWprVrlFC940s889nbpFAfDFgCktd5XLAHkhXp5Xlk',
+  );
   
   if (!kIsWeb) {
     HomeWidget.setAppGroupId('tokn_app_group');
   }
   
-  try {
-    if (!kIsWeb) {
-      await NotificationService.init();
-      await NotificationService.schedulePeriodicNotification();
-      NotificationService.showLiveAlert(); 
-    }
-  } catch (e) {
-    debugPrint("Notification initialization error: $e");
-  }
+
+
 
   runApp(const MyApp());
 }
@@ -40,59 +39,22 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-  ShakeDetector? detector; // Made nullable
+
 
   @override
   void initState() {
     super.initState();
-    if (!kIsWeb) {
-      detector = ShakeDetector.autoStart(
-        onPhoneShake: (event) {
-          _showShakeConfirmation();
-        },
-        shakeThresholdGravity: 1.5,
-      );
-    }
   }
 
   @override
   void dispose() {
-    detector?.stopListening();
     super.dispose();
   }
 
-  void _showShakeConfirmation() {
-    final context = navigatorKey.currentState?.overlay?.context;
-    if (context == null) return;
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Need Help?'),
-        content: const Text('We detected a shake. Would you like to open the Help & Support centre?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              navigatorKey.currentState?.push(
-                MaterialPageRoute(builder: (context) => const HelpSupportPage()),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2E4C9D),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Open Help'),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {

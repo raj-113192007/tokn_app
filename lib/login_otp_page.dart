@@ -3,7 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tokn/home_page.dart';
 import 'widgets/animation_utils.dart';
+import 'services/supabase_service.dart';
 import 'services/api_service.dart';
+import 'widgets/tokn_snackbar.dart';
+
+
+
 
 class LoginOtpPage extends StatefulWidget {
   final String identifier;
@@ -26,30 +31,40 @@ class _LoginOtpPageState extends State<LoginOtpPage> {
 
   Future<void> _verifyOtp(String otp) async {
     setState(() => _isLoading = true);
-    final res = await ApiService.verifyOtp(
-      email: widget.isPhone ? null : widget.identifier,
-      phone: widget.isPhone ? widget.identifier : null,
-      otp: otp,
-    );
-    
-    if (mounted) {
-      setState(() => _isLoading = false);
-      if (res['success'] == true) {
-        setState(() => _isVerified = true);
-        Future.delayed(const Duration(milliseconds: 500), () {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const HomePage()),
-            (route) => false,
-          );
-        });
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(res['error'] ?? 'Verification failed'), backgroundColor: Colors.red),
-        );
+    try {
+      final result = await ApiService.verifyOtp(
+        phone: widget.isPhone ? widget.identifier : null,
+        email: !widget.isPhone ? widget.identifier : null,
+        otp: otp,
+      );
+
+      
+      if (mounted) {
+        setState(() => _isLoading = false);
+        if (result['success'] == true && result['session'] != null) {
+          setState(() => _isVerified = true);
+          Future.delayed(const Duration(milliseconds: 500), () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const HomePage()),
+              (route) => false,
+            );
+          });
+        } else {
+          ToknSnackBar.show(context, message: result['message'] ?? 'Unknown error');
+        }
+
+
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ToknSnackBar.show(context, message: e.toString());
+
       }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -190,23 +205,23 @@ class _LoginOtpPageState extends State<LoginOtpPage> {
         const SizedBox(height: 10),
         LoginOtpTimerControl(onResend: () async {
           setState(() => _isLoading = true);
-          final res = await ApiService.sendOtp(
-            email: widget.isPhone ? null : widget.identifier,
-            phone: widget.isPhone ? widget.identifier : null,
-          );
-          if (mounted) {
-            setState(() => _isLoading = false);
-            if (res['success'] == true) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('OTP Resent!'), backgroundColor: Colors.green),
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(res['error'] ?? 'Resend failed'), backgroundColor: Colors.red),
-              );
+          try {
+            await SupabaseService().signInWithOtp(phone: widget.identifier);
+
+            if (mounted) {
+              setState(() => _isLoading = false);
+              ToknSnackBar.show(context, message: 'OTP Resent!', type: SnackBarType.success);
+
+            }
+          } catch (e) {
+            if (mounted) {
+              setState(() => _isLoading = false);
+              ToknSnackBar.show(context, message: e.toString());
+
             }
           }
         }),
+
 
         const SizedBox(height: 30),
         SizedBox(
@@ -257,10 +272,11 @@ class LoginOtpInputRow extends StatefulWidget {
 
 class _LoginOtpInputRowState extends State<LoginOtpInputRow> {
   final List<TextEditingController> _controllers = List.generate(
-    4,
+    6,
     (_) => TextEditingController(),
   );
-  final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
+  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
+
 
   @override
   void dispose() {
@@ -277,10 +293,10 @@ class _LoginOtpInputRowState extends State<LoginOtpInputRow> {
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: List.generate(4, (index) {
+      children: List.generate(6, (index) {
         return SizedBox(
-          width: 60,
-          height: 60,
+          width: 45,
+          height: 55,
           child: TextField(
             controller: _controllers[index],
             focusNode: _focusNodes[index],
@@ -288,7 +304,7 @@ class _LoginOtpInputRowState extends State<LoginOtpInputRow> {
             keyboardType: TextInputType.number,
             maxLength: 1,
             style: GoogleFonts.poppins(
-              fontSize: 22,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
             decoration: InputDecoration(
@@ -309,20 +325,21 @@ class _LoginOtpInputRowState extends State<LoginOtpInputRow> {
               ),
             ),
             onChanged: (value) {
-              if (value.isNotEmpty && index < 3) {
+              if (value.isNotEmpty && index < 5) {
                 _focusNodes[index + 1].requestFocus();
               } else if (value.isEmpty && index > 0) {
                 _focusNodes[index - 1].requestFocus();
               }
 
               String code = _controllers.map((c) => c.text).join();
-              bool isComplete = code.isNotEmpty;
+              bool isComplete = code.length == 6;
               widget.onChanged(isComplete, code);
             },
           ),
         );
       }),
     );
+
   }
 }
 

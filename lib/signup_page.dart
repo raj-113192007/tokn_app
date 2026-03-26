@@ -2,10 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'otp_verification_page.dart';
 import 'widgets/animation_utils.dart';
-import 'services/api_service.dart';
+
 import 'home_page.dart'; // To navigate on success
+import 'services/supabase_service.dart';
+import 'services/api_service.dart';
+import 'widgets/tokn_snackbar.dart';
+import 'signup_otp_page.dart';
+
+
+
+
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -222,17 +229,25 @@ class _SignupPageState extends State<SignupPage> {
                             FadeSlideTransition(
                               delay: const Duration(milliseconds: 400),
                               beginOffset: const Offset(0.1, 0),
-                              child: _buildTextField(
+                               child: _buildTextField(
                                 controller: _phoneController,
                                 hintText: 'Phone Number',
                                 icon: Icons.phone_android_outlined,
                                 keyboardType: TextInputType.phone,
+                                prefix: Text(
+                                  '+91 ',
+                                  style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
                                 inputFormatters: [
                                   FilteringTextInputFormatter.digitsOnly,
                                   LengthLimitingTextInputFormatter(10),
                                 ],
                                 errorText: _phoneError,
                               ),
+
                             ),
                             const SizedBox(height: 20),
                             FadeSlideTransition(
@@ -287,42 +302,53 @@ class _SignupPageState extends State<SignupPage> {
                                             ? () async {
                                                 setState(() => _isLoading = true);
                                                 
-                                                final result = await ApiService.signup(
-                                                  fullName: _nameController.text.trim(),
-                                                  email: _emailController.text.trim(),
-                                                  phone: _phoneController.text.trim(),
-                                                  password: _passwordController.text,
-                                                );
+                                                try {
+                                                  final phone = _phoneController.text.trim();
+                                                  String formattedPhone = phone;
+                                                  if (!phone.startsWith('+')) {
+                                                    formattedPhone = '+91$phone';
+                                                  }
 
-                                                if (mounted) {
-                                                  setState(() => _isLoading = false);
-                                                  
-                                                  if (result['success'] == true) {
-                                                    // Success: Navigate to OTP Verification
-                                                    try {
+                                                  final result = await ApiService.signup(
+                                                    fullName: _nameController.text.trim(),
+                                                    email: _emailController.text.trim(),
+                                                    phone: formattedPhone,
+                                                    password: _passwordController.text,
+                                                  );
+
+                                                  if (mounted) {
+                                                    setState(() => _isLoading = false);
+                                                    if (result['success'] == true) {
+                                                      // On success, navigate to Home (or a Verify Email page if necessary)
+                                                      ToknSnackBar.show(context, message: 'Verification code sent to your email!', type: SnackBarType.success);
+                                                      
                                                       Navigator.push(
                                                         context,
                                                         MaterialPageRoute(
-                                                          builder: (context) => OtpVerificationPage(
+                                                          builder: (context) => SignupOtpPage(
+                                                            fullName: _nameController.text.trim(),
                                                             email: _emailController.text.trim(),
-                                                            phoneNumber: _phoneController.text.trim(),
+                                                            phone: formattedPhone,
                                                           ),
                                                         ),
                                                       );
-                                                    } catch (navError) {
-                                                      ScaffoldMessenger.of(context).showSnackBar(
-                                                        SnackBar(content: Text('Navigation error: $navError'), backgroundColor: Colors.orange),
-                                                      );
+
+                                                    } else {
+                                                      ToknSnackBar.show(context, message: result['message'] ?? 'Signup failed');
+
                                                     }
-                                                  } else {
-                                                    // Error: Show message from backend
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(content: Text(result['error'] ?? 'Signup failed'), backgroundColor: Colors.red),
-                                                    );
+                                                  }
+
+                                                } catch (e) {
+                                                  if (mounted) {
+                                                    setState(() => _isLoading = false);
+                                                      ToknSnackBar.show(context, message: e.toString());
+
                                                   }
                                                 }
                                               }
                                             : null,
+
                                         child: Container(
                                           width: double.infinity,
                                           height: 55,
@@ -338,16 +364,17 @@ class _SignupPageState extends State<SignupPage> {
                                             ),
                                           ),
                                           child: Center(
-                                            child: Text(
-                                              'Verify Otp',
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 22,
-                                                fontWeight: FontWeight.bold,
-                                                color: _isFormValid
-                                                    ? const Color(0xFF000000)
-                                                    : Colors.grey,
+                                              child: Text(
+                                                'Create Account',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 22,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: _isFormValid
+                                                      ? const Color(0xFF000000)
+                                                      : Colors.grey,
+                                                ),
                                               ),
-                                            ),
+
                                           ),
                                         ),
                                       ),
@@ -407,6 +434,7 @@ class _SignupPageState extends State<SignupPage> {
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
     String? errorText,
+    Widget? prefix,
   }) {
     return TextField(
       controller: controller,
@@ -420,6 +448,8 @@ class _SignupPageState extends State<SignupPage> {
         errorText: errorText,
         errorStyle: const TextStyle(color: Colors.red, fontSize: 12),
         prefixIcon: Icon(icon, color: Colors.black87),
+        prefix: prefix,
+
         suffixIcon: Padding(
           padding: const EdgeInsets.only(right: 8.0),
           child: Row(

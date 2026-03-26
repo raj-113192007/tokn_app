@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tokn/l10n/app_localizations.dart';
 import 'widgets/animation_utils.dart';
+import 'widgets/tokn_snackbar.dart';
+
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -13,7 +15,8 @@ class EditProfilePage extends StatefulWidget {
 class _EditProfilePageState extends State<EditProfilePage> {
   final TextEditingController _nameController = TextEditingController(text: 'John Doe');
   final TextEditingController _emailController = TextEditingController(text: 'john.doe@email.com');
-  final TextEditingController _phoneController = TextEditingController(text: '+91 9876543210');
+  final TextEditingController _phoneController = TextEditingController(text: '9876543210');
+
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +54,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
             const SizedBox(height: 20),
             _buildInputField(l10n.emailAddress, _emailController, Icons.email_outlined, keyboardType: TextInputType.emailAddress),
             const SizedBox(height: 20),
-            _buildInputField(l10n.phoneNumber, _phoneController, Icons.phone_android_outlined, keyboardType: TextInputType.phone),
+            _buildInputField(l10n.phoneNumber, _phoneController, Icons.phone_android_outlined, keyboardType: TextInputType.phone, isPhone: true),
+
             const SizedBox(height: 60),
             _buildSaveButton(l10n.updateProfile),
             const SizedBox(height: 24),
@@ -132,6 +136,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     TextEditingController controller,
     IconData icon, {
     TextInputType keyboardType = TextInputType.text,
+    bool isPhone = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -160,6 +165,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
               border: InputBorder.none,
               icon: Icon(icon, color: const Color(0xFF2E4C9D), size: 20),
+              prefixText: isPhone ? '+91 ' : null,
+              prefixStyle: GoogleFonts.poppins(
+                color: Colors.black87,
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+              ),
               floatingLabelBehavior: FloatingLabelBehavior.auto,
             ),
           ),
@@ -168,9 +179,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
+
+
   Widget _buildSaveButton(String text) {
     return ScaleOnTap(
-      onTap: () => Navigator.pop(context),
+      onTap: () {
+        ToknSnackBar.show(context, message: 'Profile updated successfully!', type: SnackBarType.success);
+        Navigator.pop(context);
+      },
+
       child: Container(
         width: double.infinity,
         height: 56,

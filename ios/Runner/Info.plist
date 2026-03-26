@@ -43,7 +43,12 @@
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>TokN needs your location to show nearby hospitals and provide better service.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>TokN needs your location to provide real-time updates while you are using the app.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
 </dict>
 </plist>

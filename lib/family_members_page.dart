@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:tokn/l10n/app_localizations.dart';
 import 'widgets/animation_utils.dart';
 import 'add_member_page.dart';
+import 'edit_member_page.dart';
+
 
 class FamilyMembersPage extends StatelessWidget {
   const FamilyMembersPage({super.key});
@@ -29,15 +31,7 @@ class FamilyMembersPage extends StatelessWidget {
           ),
         ),
         centerTitle: true,
-        actions: [
-          ScaleOnTap(
-            onTap: () {},
-            child: const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Icon(Icons.add, color: Color(0xFF2E4C9D)),
-            ),
-          ),
-        ],
+
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -66,35 +60,38 @@ class FamilyMembersPage extends StatelessWidget {
             _buildMemberCard(
               context,
               name: 'Elena Rodriguez',
-              relationship: l10n.mother,
+              relationship: 'Mother',
               accessType: l10n.bookingAccess,
               icon: Icons.person,
               iconBgColor: const Color(0xFFE3F2FD),
               iconColor: const Color(0xFF2196F3),
               isAccessPositive: true,
             ),
+
             
             _buildMemberCard(
               context,
               name: 'Marco Rodriguez',
-              relationship: l10n.spouse,
+              relationship: 'Spouse',
               accessType: l10n.bookingAccess,
               icon: Icons.person,
               iconBgColor: const Color(0xFFE8F5E9),
               iconColor: const Color(0xFF4CAF50),
               isAccessPositive: true,
             ),
+
             
             _buildMemberCard(
               context,
               name: 'Leo Rodriguez',
-              relationship: l10n.child,
+              relationship: 'Child',
               accessType: l10n.limitedAccess,
               icon: Icons.child_care,
               iconBgColor: const Color(0xFFFFF3E0),
               iconColor: const Color(0xFFFF9800),
               isAccessPositive: false,
             ),
+
             
             _buildAddButton(context, l10n.addFamilyMember),
             
@@ -212,7 +209,18 @@ class FamilyMembersPage extends StatelessWidget {
             children: [
               Expanded(
                 child: ScaleOnTap(
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditMemberPage(
+                          name: name,
+                          relationship: relationship,
+                          bookingAccess: isAccessPositive,
+                        ),
+                      ),
+                    );
+                  },
                   child: Container(
                     height: 44,
                     decoration: BoxDecoration(
@@ -231,6 +239,7 @@ class FamilyMembersPage extends StatelessWidget {
                   ),
                 ),
               ),
+
               const SizedBox(width: 12),
               ScaleOnTap(
                 onTap: () {},

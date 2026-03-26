@@ -5,6 +5,8 @@ import 'package:tokn/signup_page.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'widgets/animation_utils.dart';
+import 'widgets/tokn_snackbar.dart';
+
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
@@ -34,7 +36,7 @@ class WelcomePage extends StatelessWidget {
                     child: FadeSlideTransition(
                       delay: const Duration(milliseconds: 100),
                       child: Text(
-                        'Welcome To\nTokN Admin',
+                        'Welcome To\nTokN',
                         style: GoogleFonts.poppins(
                           fontSize: 40,
                           fontWeight: FontWeight.bold,
@@ -236,16 +238,14 @@ class WelcomePage extends StatelessWidget {
       final GoogleSignInAccount? account = await googleSignIn.signIn();
       if (account != null) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Logged in as ${account.displayName}')),
-          );
+          ToknSnackBar.show(context, message: 'Logged in as ${account.displayName}', type: SnackBarType.success);
+
         }
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Google Sign-In failed: $e')));
+        ToknSnackBar.show(context, message: 'Google Sign-In failed: $e');
+
       }
     }
   }
@@ -255,22 +255,19 @@ class WelcomePage extends StatelessWidget {
       final LoginResult result = await FacebookAuth.instance.login();
       if (result.status == LoginStatus.success) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Facebook Login Success')),
-          );
+          ToknSnackBar.show(context, message: 'Facebook Login Success', type: SnackBarType.success);
+
         }
       } else {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Facebook Login failed: ${result.message}')),
-          );
+          ToknSnackBar.show(context, message: 'Facebook Login failed: ${result.message}');
+
         }
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Facebook Login failed: $e')));
+        ToknSnackBar.show(context, message: 'Facebook Login failed: $e');
+
       }
     }
   }

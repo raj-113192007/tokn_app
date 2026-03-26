@@ -3,6 +3,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'widgets/animation_utils.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'services/scroll_notifier.dart';
+import 'services/api_service.dart';
+import 'individual_chat_page.dart';
+import 'widgets/tokn_snackbar.dart';
+
+
 
 class MessagesPage extends StatefulWidget {
   final ScrollNotifier? scrollNotifier;
@@ -16,15 +21,139 @@ class MessagesPage extends StatefulWidget {
 class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late final ScrollController _messagesScrollController;
+  List<Map<String, dynamic>> _visibleChats = [];
+  bool _isFetchingBookings = false;
+  List<dynamic> _userBookings = [];
+
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _messagesScrollController = ScrollController();
+    _visibleChats = List.from(_chats);
     // Register scroll controller so the bottom bar can hide/show on this tab.
     widget.scrollNotifier?.registerPageController('messages', _messagesScrollController);
+    _fetchBookings();
   }
+
+  Future<void> _fetchBookings() async {
+    setState(() => _isFetchingBookings = true);
+    final result = await ApiService.getBookings();
+    if (mounted && result['success'] == true) {
+      setState(() {
+        _userBookings = result['data'];
+        _isFetchingBookings = false;
+      });
+    } else if (mounted) {
+      setState(() => _isFetchingBookings = false);
+    }
+  }
+
+  void _showNewChatBottomSheet() {
+    // Filter bookings for unique hospitals
+    final Map<String, dynamic> uniqueHospitals = {};
+    for (var b in _userBookings) {
+      final h = b['hospital'];
+      if (h != null && h['name'] != null) {
+        uniqueHospitals[h['name']] = h;
+      }
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Select Hospital to Chat',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF1E40AF),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'You can only chat with hospitals where you have an active booking.',
+              style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 20),
+            if (_isFetchingBookings)
+              const Center(child: CircularProgressIndicator())
+            else if (uniqueHospitals.isEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 30),
+                  child: Column(
+                    children: [
+                      Icon(Icons.event_busy, size: 48, color: Colors.grey[300]),
+                      const SizedBox(height: 12),
+                      Text(
+                        'No bookings found.',
+                        style: GoogleFonts.poppins(color: Colors.grey, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: uniqueHospitals.length,
+                  itemBuilder: (context, index) {
+                    final hName = uniqueHospitals.keys.elementAt(index);
+                    final hData = uniqueHospitals[hName];
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        backgroundColor: const Color(0xFFF2F6FE),
+                        backgroundImage: hData['image'] != null ? NetworkImage(hData['image']) : null,
+                        child: hData['image'] == null ? const Icon(Icons.business, color: Color(0xFF2E4C9D)) : null,
+                      ),
+                      title: Text(
+                        hName,
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      subtitle: Text(
+                        'Verified Hospital',
+                        style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey),
+                      ),
+                      trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => IndividualChatPage(
+                              contactName: hName,
+                              contactImage: hData['image'] ?? '',
+                              isOnline: true,
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
 
   @override
   void dispose() {
@@ -85,10 +214,8 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: ScaleOnTap(
-          onTap: () => Navigator.pop(context),
-          child: const Icon(Icons.arrow_back, color: Colors.black),
-        ),
+        automaticallyImplyLeading: false,
+
         title: Text(
           'Messages',
           style: GoogleFonts.poppins(
@@ -100,13 +227,14 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
         centerTitle: true,
         actions: [
           ScaleOnTap(
-            onTap: () {},
+            onTap: _showNewChatBottomSheet,
             child: const Padding(
               padding: EdgeInsets.only(right: 20),
               child: Icon(Icons.edit_note_rounded, color: Color(0xFF2E4C9D), size: 28),
             ),
           ),
         ],
+
       ),
       body: Column(
         children: [
@@ -144,27 +272,74 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
           // Chat List - Filtered to only show Reception/Hospital chats
           Expanded(
             child: AnimationLimiter(
-              child: ListView.builder(
-                controller: _messagesScrollController,
-                padding: const EdgeInsets.only(top: 10),
-                itemCount: _chats.where((chat) => chat['isReception'] == true).length,
-                itemBuilder: (context, index) {
-                  final filteredChats = _chats.where((chat) => chat['isReception'] == true).toList();
-                  final chat = filteredChats[index];
-                  return AnimationConfiguration.staggeredList(
-                    position: index,
-                    duration: const Duration(milliseconds: 500),
-                    child: FadeInAnimation(
-                      child: SlideAnimation(
-                        verticalOffset: 20,
-                        child: _buildChatItem(chat),
+              child: _visibleChats.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey[200]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No conversations yet',
+                            style: GoogleFonts.poppins(color: Colors.grey, fontSize: 16),
+                          ),
+                        ],
                       ),
+                    )
+                  : ListView.builder(
+                      controller: _messagesScrollController,
+                      padding: const EdgeInsets.only(top: 10),
+                      itemCount: _visibleChats.length,
+                      itemBuilder: (context, index) {
+                        final chat = _visibleChats[index];
+                        return AnimationConfiguration.staggeredList(
+                          position: index,
+                          duration: const Duration(milliseconds: 500),
+                          child: FadeInAnimation(
+                            child: SlideAnimation(
+                              verticalOffset: 20,
+                              child: Dismissible(
+                                key: Key(chat['name']),
+                                background: Container(
+                                  color: Colors.blue,
+                                  alignment: Alignment.centerLeft,
+                                  padding: const EdgeInsets.only(left: 20),
+                                  child: const Icon(Icons.archive_outlined, color: Colors.white),
+                                ),
+                                secondaryBackground: Container(
+                                  color: Colors.red,
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.only(right: 20),
+                                  child: const Icon(Icons.delete_outline, color: Colors.white),
+                                ),
+                                onDismissed: (direction) {
+                                  setState(() {
+                                    _visibleChats.removeAt(index);
+                                  });
+                                  ToknSnackBar.show(
+                                    context, 
+                                    message: direction == DismissDirection.endToStart
+                                        ? 'Conversation deleted'
+                                        : 'Conversation archived',
+                                    actionLabel: 'UNDO',
+                                    onAction: () {
+                                      setState(() {
+                                        _visibleChats.insert(index, chat);
+                                      });
+                                    },
+                                  );
+
+                                },
+                                child: _buildChatItem(chat),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ),
+
         ],
       ),
     );
@@ -173,8 +348,18 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
   Widget _buildChatItem(Map<String, dynamic> chat) {
     return ScaleOnTap(
       onTap: () {
-        // Navigate to actual chat screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => IndividualChatPage(
+              contactName: chat['name'],
+              contactImage: chat['imageUrl'],
+              isOnline: chat['unread'] > 0 || chat['isOnline'] == true,
+            ),
+          ),
+        );
       },
+
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
         decoration: BoxDecoration(

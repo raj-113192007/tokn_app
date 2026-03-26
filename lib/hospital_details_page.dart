@@ -4,6 +4,8 @@ import 'widgets/animation_utils.dart';
 import 'widgets/glass_bottom_bar.dart';
 
 import 'services/api_service.dart';
+import 'widgets/tokn_snackbar.dart';
+
 
 class HospitalDetailsPage extends StatelessWidget {
   final String hospitalId;
@@ -416,9 +418,8 @@ class HospitalDetailsPage extends StatelessWidget {
                     ),
                   );
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(result['error'] ?? 'Booking failed'), backgroundColor: Colors.red),
-                  );
+                  ToknSnackBar.show(context, message: result['error'] ?? 'Booking failed');
+
                 }
               }
             },

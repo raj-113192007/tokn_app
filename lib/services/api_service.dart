@@ -1,6 +1,12 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:tokn/services/supabase_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:tokn/utils/error_mapper.dart';
+
+
+
 
 class ApiService {
   static const _storage = FlutterSecureStorage();
@@ -21,50 +27,80 @@ class ApiService {
     required String phone,
     required String password,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    await _storage.write(key: 'jwt_token', value: 'mock_token_123');
-    return {
-      'success': true,
-      'token': 'mock_token_123',
-      'user': {
-        'id': 'user_1',
-        'full_name': fullName,
-        'email': email,
-        'phone_number': phone,
+    try {
+      // 1. Check uniqueness first
+      final isRegistered = await SupabaseService().isEmailOrPhoneRegistered(email, phone);
+      if (isRegistered) {
+        return {
+          'success': false, 
+          'message': 'Account with this email or phone number already exists.'
+        };
       }
-    };
+
+      await SupabaseService().signUpWithEmail(
+        email: email, 
+        password: password, 
+        fullName: fullName
+      );
+
+      return {
+        'success': true,
+        'message': 'Verification code sent.',
+      };
+
+
+
+    } catch (e) {
+      return {'success': false, 'message': ErrorMapper.mapError(e.toString())};
+    }
+
   }
 
-  // Auth: Login
+
+  // Auth: Login with Password
   static Future<Map<String, dynamic>> login({
     required String identifier, // Email or Phone
     required String password,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    await _storage.write(key: 'jwt_token', value: 'mock_token_123');
-    return {
-      'success': true,
-      'token': 'mock_token_123',
-      'user': {
-        'id': 'user_1',
-        'full_name': 'Mock User',
-        'email': identifier.contains('@') ? identifier : 'user@example.com',
-        'phone_number': identifier.contains('@') ? '1234567890' : identifier,
+    try {
+      bool isPhone = RegExp(r'^\d{10}$').hasMatch(identifier);
+      String formattedIdentifier = identifier;
+      if (isPhone && !identifier.startsWith('+')) {
+        formattedIdentifier = '+91$identifier';
       }
-    };
+
+      final response = await SupabaseService().signInWithPassword(
+        email: !isPhone ? formattedIdentifier : null,
+        phone: isPhone ? formattedIdentifier : null,
+        password: password,
+      );
+      return {
+        'success': true,
+        'user': response.user,
+        'session': response.session,
+      };
+    } catch (e) {
+      return {'success': false, 'message': ErrorMapper.mapError(e.toString())};
+    }
+
   }
+
+
 
   // Auth: Send OTP
   static Future<Map<String, dynamic>> sendOtp({
     String? email,
     String? phone,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return {
-      'success': true,
-      'message': 'Mock OTP sent successfully.'
-    };
+    try {
+      await SupabaseService().signInWithOtp(email: email, phone: phone);
+      return {'success': true, 'message': 'OTP sent successfully.'};
+    } catch (e) {
+      return {'success': false, 'message': ErrorMapper.mapError(e.toString())};
+    }
+
   }
+
 
   // Auth: Verify OTP
   static Future<Map<String, dynamic>> verifyOtp({
@@ -72,18 +108,67 @@ class ApiService {
     String? phone,
     required String otp,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    await _storage.write(key: 'jwt_token', value: 'mock_token_123');
-    return {
-      'success': true,
-      'token': 'mock_token_123',
-      'user': {
-        'id': 'user_1',
-        'full_name': 'Mock User',
-        'email': email ?? 'user@example.com',
-        'phone_number': phone ?? '1234567890',
+    try {
+      final response = await SupabaseService().verifyOTP(
+        email: email,
+        phone: phone,
+        token: otp,
+        type: email != null ? OtpType.email : OtpType.sms,
+      );
+      return {
+        'success': true,
+        'user': response.user,
+        'session': response.session,
+      };
+    } catch (e) {
+      return {'success': false, 'message': ErrorMapper.mapError(e.toString())};
+    }
+
+  }
+
+  // Auth: Verify Signup OTP & Create Profile
+  static Future<Map<String, dynamic>> verifySignupOtp({
+    required String email,
+    required String phone,
+    required String fullName,
+    required String otp,
+  }) async {
+    try {
+      final response = await SupabaseService().verifyOTP(
+        email: email,
+        token: otp,
+        type: OtpType.signup,
+      );
+
+      if (response.user != null) {
+        // Create profile NOW only after successful verification
+        await SupabaseService().createUserProfile(
+          fullName: fullName, 
+          email: email,
+          phone: phone,
+        );
       }
-    };
+
+      return {
+        'success': true,
+        'user': response.user,
+      };
+    } catch (e) {
+      return {'success': false, 'message': ErrorMapper.mapError(e.toString())};
+    }
+  }
+
+
+  // Auth: Reset Password
+
+  static Future<Map<String, dynamic>> resetPassword(String email) async {
+    try {
+      await SupabaseService().resetPassword(email);
+      return {'success': true, 'message': 'Password reset link sent to your email.'};
+    } catch (e) {
+      return {'success': false, 'message': ErrorMapper.mapError(e.toString())};
+    }
+
   }
 
   // Hospitals: Get All
@@ -155,12 +240,14 @@ class ApiService {
 
   // Logout
   static Future<void> logout() async {
+    await SupabaseService().signOut();
     await _storage.delete(key: 'jwt_token');
   }
 
+
   // Check if logged in
   static Future<bool> isLoggedIn() async {
-    String? token = await _storage.read(key: 'jwt_token');
-    return token != null;
+    return SupabaseService.client.auth.currentSession != null;
   }
+
 }
