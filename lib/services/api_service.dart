@@ -53,7 +53,6 @@ class ApiService {
         'success': true,
         'message': 'Verification code sent.',
       };
-
     } catch (e) {
       return {'success': false, 'message': ErrorMapper.mapError(e.toString())};
     }

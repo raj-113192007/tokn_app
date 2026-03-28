@@ -1,0 +1,7 @@
+﻿lib/login_otp_page.dart:209:<<<<<<< HEAD
+lib/profile_page.dart:64:<<<<<<< HEAD
+lib/profile_page.dart:74:<<<<<<< HEAD
+lib/services/supabase_service.dart:11:<<<<<<< HEAD
+lib/services/supabase_service.dart:77:<<<<<<< HEAD
+lib/services/supabase_service.dart:87:<<<<<<< HEAD
+lib/signup_otp_page.dart:136:<<<<<<< HEAD

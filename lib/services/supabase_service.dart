@@ -67,6 +67,7 @@ class SupabaseService {
   }
 
   // 4. Phone Authentication - Start (Sends OTP)
+  // 4. Phone Authentication - Start (Sends OTP)
   Future<AuthResponse> signUpWithEmail({
     required String email,
     required String password,

@@ -181,7 +181,6 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
   void _showNotifications() {
     showModalBottomSheet(
       context: context,
@@ -668,7 +667,7 @@ class _HomePageState extends State<HomePage> {
 
                 const SizedBox(height: 25),
 
-                // Recently Visited Section
+                // Recently Visited Section for application homepage
                 _buildSectionHeader('Recently Visited'),
                 const SizedBox(height: 15),
                 SizedBox(

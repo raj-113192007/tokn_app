@@ -13,7 +13,7 @@ class SignupOtpPage extends StatefulWidget {
   final String email;
   final String phone;
   final String password;
-
+//this is only for the supabse authentication/.
   const SignupOtpPage({
     super.key,
     required this.fullName,
@@ -166,7 +166,6 @@ class _SignupOtpPageState extends State<SignupOtpPage> {
                                       phone: widget.phone,
                                       type: OtpType.sms,
                                     );
-                                    
                                     if (mounted) {
                                       setState(() => _isLoading = false);
                                       ToknSnackBar.show(context, message: 'OTP Resent!', type: SnackBarType.success);
