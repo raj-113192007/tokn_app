@@ -12,6 +12,16 @@ import 'widgets/animation_utils.dart';
 import 'widgets/hideable_bottom_bar.dart';
 import 'services/api_service.dart';
 import 'services/scroll_notifier.dart';
+import 'all_hospitals_page.dart';
+import 'all_categories_page.dart';
+
+import 'liked_hospitals_page.dart';
+import 'widgets/booking_card.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'services/supabase_service.dart';
+import 'widgets/tokn_snackbar.dart';
+
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -27,7 +37,10 @@ class _HomePageState extends State<HomePage> {
   late ScrollController _homePageScrollController;
   String _userName = 'User';
   List<dynamic> _realHospitals = [];
+  List<dynamic> _upcomingBookings = [];
   bool _isLoadingHospitals = true;
+  bool _isLoadingBookings = true;
+
 
   @override
   void initState() {
@@ -39,7 +52,12 @@ class _HomePageState extends State<HomePage> {
     _scrollNotifier.setCurrentPage('home');
     _loadUserName();
     _fetchHospitals();
+    _fetchBookings();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkEmailVerification();
+    });
   }
+
 
   @override
   void dispose() {
@@ -62,6 +80,22 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _fetchBookings() async {
+    setState(() => _isLoadingBookings = true);
+    final result = await ApiService.getBookings();
+    if (mounted) {
+      setState(() {
+        if (result['success'] == true) {
+          _upcomingBookings = result['data'].where((b) => 
+            b['status'] == 'Pending' || b['status'] == 'Confirmed'
+          ).toList();
+        }
+        _isLoadingBookings = false;
+      });
+    }
+  }
+
+
   Future<void> _loadUserName() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -78,7 +112,153 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _checkEmailVerification() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    // Check if email is NOT confirmed
+    if (user == null || user.emailConfirmedAt != null) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final lastPrompt = prefs.getInt('last_email_prompt_time') ?? 0;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    
+    // 2 days in milliseconds: 172,800,000
+    if (now - lastPrompt > 172800000) {
+      if (mounted) {
+        _showEmailVerificationDialog(user.email!);
+        await prefs.setInt('last_email_prompt_time', now);
+      }
+    }
+  }
+
+  void _showEmailVerificationDialog(String email) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Verify Your Email', 
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18)
+        ),
+        content: Text(
+          'Your email ($email) is not verified. Verify it to secure your account and receive queue updates.',
+          style: GoogleFonts.poppins(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Later', style: GoogleFonts.poppins(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await SupabaseService().resendOTP(
+                  email: email, 
+                  type: OtpType.signup
+                );
+                if (mounted) {
+                  Navigator.pop(context);
+                  ToknSnackBar.show(context, 
+                    message: 'Verification email sent! Check your inbox.', 
+                    type: SnackBarType.success
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ToknSnackBar.show(context, 
+                    message: 'Failed to send: ${e.toString().split(':').last}', 
+                    type: SnackBarType.error
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1E40AF),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: Text('Verify Now', style: GoogleFonts.poppins(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showNotifications() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Notifications',
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Clear all',
+                    style: GoogleFonts.poppins(
+                      color: const Color(0xFF1E40AF),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 40),
+            Icon(
+              Icons.notifications_off_outlined,
+              size: 64,
+              color: Colors.grey[300],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No new notifications',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'We\'ll notify you when something important arrives.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.grey[400],
+              ),
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showCityPicker() {
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -211,20 +391,15 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
           child: Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.blue.shade100, width: 2),
-                ),
-                child: const CircleAvatar(
-                  radius: 20,
-                  backgroundImage: NetworkImage('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200'),
-                ),
+              Image.asset(
+                'assets/splash_logo.png',
+                width: 32,
+                height: 32,
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Text(
                 'Hi ${_getFirstName()}',
+
                 style: GoogleFonts.poppins(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -233,7 +408,7 @@ class _HomePageState extends State<HomePage> {
               ),
               const Spacer(),
               ScaleOnTap(
-                onTap: () {},
+                onTap: _showNotifications,
                 child: Container(
                   width: 40,
                   height: 40,
@@ -244,6 +419,7 @@ class _HomePageState extends State<HomePage> {
                   child: const AnimatedBell(),
                 ),
               ),
+
             ],
           ),
         ),
@@ -354,11 +530,41 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
 
+                if (!_isLoadingBookings && _upcomingBookings.isNotEmpty) ...[
+                  const SizedBox(height: 25),
+                  _buildSectionHeader('Upcoming Booking'),
+                  const SizedBox(height: 15),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: BookingCard(
+                      hospitalName: _upcomingBookings.first['hospital']?['name'] ?? 'Hospital',
+                      department: _upcomingBookings.first['hospital']?['categories']?.join(', ') ?? 'General',
+                      tokenNumber: _upcomingBookings.first['token_number'] ?? 'N/A',
+                      doctorName: 'On Duty Doctor',
+                      patientName: 'You',
+                      date: _upcomingBookings.first['booking_date'].split('T')[0],
+                      time: _upcomingBookings.first['booking_time'] ?? 'N/A',
+                      status: _upcomingBookings.first['status'] ?? 'Upcoming',
+                      actionText: 'Directions',
+                    ),
+                  ),
+                ],
+
                 const SizedBox(height: 25),
 
+
                 // Hospitals Section
-                _buildSectionHeader('Hospitals'),
+                _buildSectionHeader(
+                  'Hospitals',
+                  onMoreTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AllHospitalsPage(hospitals: _realHospitals),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 15),
+
                 _isLoadingHospitals
                     ? const Center(child: CircularProgressIndicator())
                     : _realHospitals.isEmpty
@@ -387,11 +593,64 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
 
+
+
+                const SizedBox(height: 25),
+
+                // Liked Hospitals Section
+                _buildSectionHeader(
+                  'Liked Hospitals',
+                  onMoreTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => LikedHospitalsPage(likedHospitals: _realHospitals.take(3).toList()),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 15),
+                _isLoadingHospitals
+                    ? const Center(child: CircularProgressIndicator())
+                    : _realHospitals.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Text(
+                              'No liked hospitals found.',
+                              style: GoogleFonts.poppins(color: Colors.grey),
+                            ),
+                          )
+                        : SizedBox(
+                            height: 160,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              itemCount: _realHospitals.take(3).length,
+                              itemBuilder: (context, index) {
+                                final h = _realHospitals[index];
+                                return _buildHospitalCard(
+                                  context,
+                                  h['_id'] ?? '',
+                                  h['name'] ?? 'Hospital',
+                                  h['image'] ?? 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=400',
+                                );
+                              },
+                            ),
+                          ),
+
+
                 const SizedBox(height: 25),
 
                 // Category Section
-                _buildSectionHeader('Category'),
+                _buildSectionHeader(
+                  'Category',
+                  onMoreTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AllCategoriesPage(categories: _categories),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 15),
+
                 SizedBox(
                   height: 110,
                   child: ListView.builder(
@@ -449,7 +708,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(String title, {VoidCallback? onMoreTap}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
@@ -463,11 +722,17 @@ class _HomePageState extends State<HomePage> {
               color: Colors.black,
             ),
           ),
-          const Icon(Icons.more_vert, color: Colors.black),
+          if (onMoreTap != null)
+            ScaleOnTap(
+              onTap: onMoreTap,
+              child: const Icon(Icons.more_vert, color: Colors.black),
+            ),
         ],
+
       ),
     );
   }
+
 
   Widget _buildHospitalCard(BuildContext context, String id, String name, String imageUrl) {
     return GestureDetector(

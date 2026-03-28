@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'widgets/animation_utils.dart';
+import 'services/api_service.dart';
+import 'widgets/tokn_snackbar.dart';
+
+
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -72,14 +76,29 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               width: double.infinity,
               height: 55,
               child: ScaleOnTap(
-                onTap: () {
-                  // TODO: Implement reset logic
+                onTap: () async {
+                  final input = _controller.text.trim();
+                  if (input.isEmpty) return;
+                  
+                  final result = await ApiService.resetPassword(input);
+                  if (mounted) {
+                    ToknSnackBar.show(
+                      context, 
+                      message: result['message'],
+                      type: result['success'] ? SnackBarType.success : SnackBarType.error,
+                    );
+                    if (result['success']) {
+                      Navigator.pop(context);
+                    }
+                  }
+
                 },
                 child: Container(
                   decoration: BoxDecoration(
                     color: const Color(0xFF2E4C9D),
                     borderRadius: BorderRadius.circular(30),
                   ),
+
                   child: Center(
                     child: Text(
                       'Continue',

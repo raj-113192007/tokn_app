@@ -5,6 +5,8 @@ import 'package:tokn/signup_page.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'widgets/animation_utils.dart';
+import 'widgets/tokn_snackbar.dart';
+
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
@@ -34,7 +36,7 @@ class WelcomePage extends StatelessWidget {
                     child: FadeSlideTransition(
                       delay: const Duration(milliseconds: 100),
                       child: Text(
-                        'Welcome To\nTokN Admin',
+                        'Welcome To\nTokN',
                         style: GoogleFonts.poppins(
                           fontSize: 40,
                           fontWeight: FontWeight.bold,
@@ -65,7 +67,7 @@ class WelcomePage extends StatelessWidget {
                 ),
                 const Spacer(),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 60.0),
                   child: Column(
                     children: [
                       FadeSlideTransition(
@@ -81,19 +83,19 @@ class WelcomePage extends StatelessWidget {
                           },
                           child: Container(
                             width: double.infinity,
-                            height: 50,
+                            height: 48,
                             decoration: BoxDecoration(
                               border: Border.all(
                                 color: const Color(0xFF6C63FF),
                                 width: 1.5,
                               ),
-                              borderRadius: BorderRadius.circular(30),
+                              borderRadius: BorderRadius.circular(25),
                             ),
                             child: Center(
                               child: Text(
-                                'Sign in',
+                                'Login',
                                 style: GoogleFonts.poppins(
-                                  fontSize: 22,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   color: const Color(0xFF2E4C9D),
                                 ),
@@ -116,16 +118,16 @@ class WelcomePage extends StatelessWidget {
                           },
                           child: Container(
                             width: double.infinity,
-                            height: 50,
+                            height: 48,
                             decoration: BoxDecoration(
                               color: const Color(0xFF3B9966),
-                              borderRadius: BorderRadius.circular(30),
+                              borderRadius: BorderRadius.circular(25),
                             ),
                             child: Center(
                               child: Text(
-                                'Sign Up',
+                                'Register',
                                 style: GoogleFonts.poppins(
-                                  fontSize: 24,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
@@ -236,16 +238,14 @@ class WelcomePage extends StatelessWidget {
       final GoogleSignInAccount? account = await googleSignIn.signIn();
       if (account != null) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Logged in as ${account.displayName}')),
-          );
+          ToknSnackBar.show(context, message: 'Logged in as ${account.displayName}', type: SnackBarType.success);
+
         }
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Google Sign-In failed: $e')));
+        ToknSnackBar.show(context, message: 'Google Sign-In failed: $e');
+
       }
     }
   }
@@ -255,22 +255,19 @@ class WelcomePage extends StatelessWidget {
       final LoginResult result = await FacebookAuth.instance.login();
       if (result.status == LoginStatus.success) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Facebook Login Success')),
-          );
+          ToknSnackBar.show(context, message: 'Facebook Login Success', type: SnackBarType.success);
+
         }
       } else {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Facebook Login failed: ${result.message}')),
-          );
+          ToknSnackBar.show(context, message: 'Facebook Login failed: ${result.message}');
+
         }
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Facebook Login failed: $e')));
+        ToknSnackBar.show(context, message: 'Facebook Login failed: $e');
+
       }
     }
   }

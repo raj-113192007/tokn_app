@@ -11,21 +11,33 @@ class ScrollNotifier extends ChangeNotifier {
   bool get isBarVisible => _isBarVisible;
   ScrollDirection get scrollDirection => _scrollDirection;
 
+  final Map<String, VoidCallback> _listeners = {};
+
   void registerPageController(String pageId, ScrollController controller) {
     _pageControllers[pageId] = controller;
-    controller.addListener(() {
-      if (_currentPageId == pageId) {
-        // `offset` throws if the controller isn't attached to any scroll view yet.
-        if (controller.hasClients) {
-          updateScrollPosition(controller.offset);
-        }
+    
+    final listener = () {
+      if (_currentPageId == pageId && controller.hasClients) {
+        updateScrollPosition(controller.offset);
       }
-    });
+    };
+    
+    _listeners[pageId] = listener;
+    controller.addListener(listener);
   }
 
   void unregisterPageController(String pageId) {
+    final controller = _pageControllers[pageId];
+    final listener = _listeners[pageId];
+    
+    if (controller != null && listener != null) {
+      controller.removeListener(listener);
+    }
+    
     _pageControllers.remove(pageId);
+    _listeners.remove(pageId);
   }
+
 
   void setCurrentPage(String pageId) {
     _currentPageId = pageId;
@@ -62,7 +74,18 @@ class ScrollNotifier extends ChangeNotifier {
     _lastScrollPosition = 0;
     _isBarVisible = true;
     _scrollDirection = ScrollDirection.idle;
+    notifyListeners();
   }
+
+  @override
+  void dispose() {
+
+    for (var pageId in _pageControllers.keys.toList()) {
+      unregisterPageController(pageId);
+    }
+    super.dispose();
+  }
+
 }
 
 enum ScrollDirection { up, down, idle }

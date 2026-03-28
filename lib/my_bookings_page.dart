@@ -5,6 +5,8 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:home_widget/home_widget.dart';
 import 'services/api_service.dart';
 import 'services/scroll_notifier.dart';
+import 'widgets/booking_card.dart';
+
 
 class MyBookingsPage extends StatefulWidget {
   final ScrollNotifier? scrollNotifier;
@@ -83,15 +85,21 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
 
       if (upcomingBookings.isNotEmpty) {
         final b = upcomingBookings.first;
-        await HomeWidget.saveWidgetData<String>('token', b['token_number'] ?? 'N/A');
         await HomeWidget.saveWidgetData<String>('hospital', b['hospital']?['name'] ?? 'Hospital');
-        await HomeWidget.saveWidgetData<String>('time', "${b['booking_date'].split('T')[0]} • ${b['booking_time']}");
+        await HomeWidget.saveWidgetData<String>('serving', '42'); // Mocked serving number
+        await HomeWidget.saveWidgetData<String>('mine', b['token_number'] ?? 'N/A');
+        await HomeWidget.saveWidgetData<String>('wait_time', '15');
       } else {
-        await HomeWidget.saveWidgetData<String>('token', 'No Upcoming');
-        await HomeWidget.saveWidgetData<String>('hospital', '-');
-        await HomeWidget.saveWidgetData<String>('time', '-');
+        await HomeWidget.saveWidgetData<String>('hospital', 'No Appointment');
+        await HomeWidget.saveWidgetData<String>('serving', '-');
+        await HomeWidget.saveWidgetData<String>('mine', '-');
+        await HomeWidget.saveWidgetData<String>('wait_time', '0');
       }
-      await HomeWidget.updateWidget(name: 'TokenWidgetProvider');
+      await HomeWidget.updateWidget(
+        name: 'TokenWidgetProvider',
+        androidName: 'TokenWidgetProvider',
+      );
+
     } catch (e) {
       debugPrint('Error updating Home Widget: $e');
     }
@@ -116,10 +124,8 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: ScaleOnTap(
-          onTap: () => Navigator.pop(context),
-          child: const Icon(Icons.arrow_back, color: Colors.black),
-        ),
+        automaticallyImplyLeading: false,
+
         title: Text(
           'My Bookings',
           style: GoogleFonts.poppins(
@@ -177,125 +183,28 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
             child: FadeInAnimation(
               child: SlideAnimation(
                 verticalOffset: 20,
-                child: _buildUpcomingCard({
-                  'hospital': b['hospital']?['name'] ?? 'Hospital',
-                  'dept': b['hospital']?['categories']?.join(', ') ?? 'General',
-                  'token': b['token_number'] ?? 'N/A',
-                  'doctor': 'On Duty Doctor',
-                  'patient': 'You',
-                  'time': "${b['booking_date'].split('T')[0]} • ${b['booking_time']}",
-                }),
+                child: BookingCard(
+                  hospitalName: b['hospital']?['name'] ?? 'Hospital',
+                  department: b['hospital']?['categories']?.join(', ') ?? 'General',
+                  tokenNumber: b['token_number'] ?? 'N/A',
+                  doctorName: 'On Duty Doctor',
+                  patientName: 'You',
+                  date: b['booking_date'].split('T')[0],
+                  time: b['booking_time'] ?? 'N/A',
+                  status: b['status'] ?? 'Upcoming',
+                  actionText: 'Directions',
+                ),
               ),
             ),
           );
+
         },
       ),
     );
   }
 
-  Widget _buildUpcomingCard(Map<String, String> booking) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF2F6FF),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.add_business_outlined, color: Color(0xFF2E4C9D)),
-              ),
-              const SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      booking['hospital']!,
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 15),
-                    ),
-                    Text(
-                      booking['dept']!,
-                      style: GoogleFonts.poppins(color: Colors.grey, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F1FF),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'Token ${booking['token']}',
-                  style: GoogleFonts.poppins(
-                    color: const Color(0xFF3B9966),
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          _buildInfoRow(Icons.medical_services_outlined, booking['doctor']!),
-          const SizedBox(height: 8),
-          _buildInfoRow(Icons.person_outline, 'Patient: ${booking['patient']}'),
-          const SizedBox(height: 8),
-          _buildInfoRow(Icons.access_time, booking['time']!),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: ScaleOnTap(
-                  onTap: () {},
-                  child: Container(
-                    height: 45,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2E4C9D),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.explore_outlined, color: Colors.white, size: 18),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Directions',
-                          style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              const Icon(Icons.more_vert, color: Colors.grey),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildCompletedList() {
+
     if (_isLoading) return const Center(child: CircularProgressIndicator());
     final completedBookings = _allBookings.where((b) => b['status'] == 'Completed').toList();
 

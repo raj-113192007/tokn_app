@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'animation_utils.dart'; // Assuming this is in the same folder
+import 'package:url_launcher/url_launcher.dart';
+import 'animation_utils.dart';
+
 
 class BookingCard extends StatelessWidget {
   final String hospitalName;
@@ -113,9 +115,14 @@ class BookingCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                IconButton(
+                  icon: const Icon(Icons.more_vert, color: Colors.black54),
+                  onPressed: () => _showTokenDetails(context),
+                ),
               ],
             ),
           ),
+
           
           // Main Content Section
           Padding(
@@ -212,7 +219,16 @@ class BookingCard extends StatelessWidget {
                 if (onActionTap != null) ...[
                   const SizedBox(height: 25),
                   ScaleOnTap(
-                    onTap: onActionTap,
+                    onTap: () async {
+                      if (actionText == 'Directions') {
+                        final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$hospitalName+Dehradun');
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(url);
+                        }
+                      } else if (onActionTap != null) {
+                        onActionTap!();
+                      }
+                    },
                     child: Container(
                       width: double.infinity,
                       height: 50,
@@ -250,6 +266,7 @@ class BookingCard extends StatelessWidget {
                       ),
                     ),
                   ),
+
                 ]
               ],
             ),
@@ -298,4 +315,133 @@ class BookingCard extends StatelessWidget {
       ],
     );
   }
+
+  void _showTokenDetails(BuildContext context) {
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.75,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Token Details',
+              style: GoogleFonts.poppins(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF2E4C9D),
+              ),
+            ),
+            const SizedBox(height: 20),
+            _buildDetailRow(Icons.local_hospital_rounded, 'Hospital', hospitalName),
+            _buildDetailRow(Icons.medical_services_rounded, 'Doctor', doctorName),
+            _buildDetailRow(Icons.bug_report_outlined, 'Illness/Reason', department),
+            const Divider(height: 40),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildCountBlock('Current Token', '12', Colors.orange),
+                _buildCountBlock('Your Token', tokenNumber, const Color(0xFF2E4C9D)),
+              ],
+            ),
+            const SizedBox(height: 25),
+            _buildDetailRow(Icons.timer_outlined, 'Expected Time', '15-20 Mins'),
+            const Spacer(),
+            Row(
+              children: [
+                Expanded(
+                  child: ScaleOnTap(
+                    onTap: () {
+                      Navigator.pop(context);
+                      // Navigate to chat flow
+                    },
+                    child: Container(
+                      height: 55,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2E4C9D),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Chat with Doctor',
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Icon(icon, color: const Color(0xFF2E4C9D), size: 22),
+          const SizedBox(width: 15),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
+              Text(value, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCountBlock(String label, String count, Color color) {
+    return Column(
+      children: [
+        Text(label, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
+        const SizedBox(height: 5),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            count,
+            style: GoogleFonts.poppins(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
+

@@ -9,10 +9,12 @@ class SecurityProvider with ChangeNotifier {
   
   bool _biometricEnabled = false;
   bool _appPasswordEnabled = false;
+  bool _walletPinEnabled = false;
   bool _isLocked = false;
   
   bool get biometricEnabled => _biometricEnabled;
   bool get appPasswordEnabled => _appPasswordEnabled;
+  bool get walletPinEnabled => _walletPinEnabled;
   bool get isLocked => _isLocked;
 
   SecurityProvider() {
@@ -23,6 +25,7 @@ class SecurityProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     _biometricEnabled = prefs.getBool('biometric_enabled') ?? false;
     _appPasswordEnabled = prefs.getBool('app_password_enabled') ?? false;
+    _walletPinEnabled = prefs.getBool('wallet_pin_enabled') ?? false;
     
     // If app password is enabled, we start locked
     if (_appPasswordEnabled) {
@@ -52,6 +55,20 @@ class SecurityProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setWalletPinEnabled(bool value, {String? pin}) async {
+    final prefs = await SharedPreferences.getInstance();
+    _walletPinEnabled = value;
+    await prefs.setBool('wallet_pin_enabled', value);
+    
+    if (value && pin != null) {
+      await _storage.write(key: 'wallet_pin', value: pin);
+    } else if (!value) {
+      await _storage.delete(key: 'wallet_pin');
+    }
+    
+    notifyListeners();
+  }
+
   Future<bool> authenticateBiometric() async {
     try {
       final bool canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
@@ -60,17 +77,13 @@ class SecurityProvider with ChangeNotifier {
       if (!canAuthenticate) return false;
 
       final bool didAuthenticate = await _auth.authenticate(
-        localizedReason: 'Please authenticate to unlock the app',
+        localizedReason: 'Please authenticate to proceed',
         options: const AuthenticationOptions(
           stickyAuth: true,
           biometricOnly: true,
         ),
       );
 
-      if (didAuthenticate) {
-        _isLocked = false;
-        notifyListeners();
-      }
       return didAuthenticate;
     } catch (e) {
       return false;
@@ -86,6 +99,12 @@ class SecurityProvider with ChangeNotifier {
     }
     return false;
   }
+
+  Future<bool> verifyWalletPin(String pin) async {
+    final savedPin = await _storage.read(key: 'wallet_pin');
+    return savedPin == pin;
+  }
+
 
   void lock() {
     if (_appPasswordEnabled) {

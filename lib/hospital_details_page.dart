@@ -4,6 +4,8 @@ import 'widgets/animation_utils.dart';
 import 'widgets/glass_bottom_bar.dart';
 
 import 'services/api_service.dart';
+import 'widgets/tokn_snackbar.dart';
+
 
 class HospitalDetailsPage extends StatelessWidget {
   final String hospitalId;
@@ -375,87 +377,143 @@ class HospitalDetailsPage extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: GlassBottomBar(
-        height: 85,
+        height: 100,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15),
-          child: ScaleOnTap(
-            onTap: () async {
-              // Show a date/time picker or just use current for now as a test
-              final now = DateTime.now();
-              final dateStr = "${now.year}-${now.month}-${now.day}";
-              final timeStr = "${now.hour}:${now.minute}";
-
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) => const Center(child: CircularProgressIndicator()),
-              );
-
-              final result = await ApiService.createBooking(
-                hospitalId: hospitalId,
-                date: dateStr,
-                time: timeStr,
-              );
-
-              if (context.mounted) {
-                Navigator.pop(context); // Close loading
-
-                if (result['success'] == true) {
-                  final token = result['data']['token_number'];
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Booking Confirmed!'),
-                      content: Text('Your Token Number is: $token'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('OK'),
-                        ),
-                      ],
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(result['error'] ?? 'Booking failed'), backgroundColor: Colors.red),
-                  );
-                }
-              }
-            },
-            child: Container(
-              height: 55,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: const Color(0xFF2E4C9D),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF2E4C9D).withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+          padding: const EdgeInsets.fromLTRB(15, 10, 15, 20),
+          child: Row(
+            children: [
+              // Normal Booking
+              Expanded(
+                child: _buildBookingTypeButton(
+                  context,
+                  label: 'Normal',
+                  price: '₹19',
+                  color: const Color(0xFF2E4C9D),
+                  onTap: () => _handleBooking(context, 'Normal', 19.0),
+                ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.receipt_long_outlined, color: Colors.white),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Book Token Now',
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+              const SizedBox(width: 12),
+              // Emergency Booking
+              Expanded(
+                child: _buildBookingTypeButton(
+                  context,
+                  label: 'Emer...',
+                  fullLabel: 'Emergency',
+                  price: '₹49',
+                  color: Colors.redAccent,
+                  onTap: () => _handleBooking(context, 'Emergency', 49.0),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildBookingTypeButton(
+    BuildContext context, {
+    required String label,
+    String? fullLabel,
+    required String price,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return ScaleOnTap(
+      onTap: onTap,
+      child: Container(
+        height: 65,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              MediaQuery.of(context).size.width < 360 ? label : (fullLabel ?? label),
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              price,
+              style: GoogleFonts.poppins(
+                color: Colors.white.withOpacity(0.9),
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleBooking(BuildContext context, String type, double price) async {
+    final now = DateTime.now();
+    final dateStr = "${now.year}-${now.month}-${now.day}";
+    final timeStr = "${now.hour}:${now.minute}";
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final result = await ApiService.createBooking(
+      hospitalId: hospitalId,
+      date: dateStr,
+      time: timeStr,
+      type: type,
+      price: price,
+    );
+
+    if (context.mounted) {
+      Navigator.pop(context); // Close loading
+
+      if (result['success'] == true) {
+        final token = result['data']['token_number'] ?? 'M-01'; // Fallback for mock
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text('Booking Confirmed!', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Your $type Token Number is:', style: GoogleFonts.poppins()),
+                const SizedBox(height: 10),
+                Text(
+                  token,
+                  style: GoogleFonts.poppins(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: type == 'Emergency' ? Colors.redAccent : const Color(0xFF2E4C9D),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('OK', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
+      } else {
+        ToknSnackBar.show(context, message: result['error'] ?? 'Booking failed');
+      }
+    }
   }
 
   Widget _buildSpecialtyChip(IconData icon, String label) {

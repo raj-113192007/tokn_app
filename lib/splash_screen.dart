@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tokn/welcome_page.dart';
+import 'package:tokn/home_page.dart';
+import 'package:tokn/services/supabase_service.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:geolocator/geolocator.dart';
+
+
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -58,9 +63,26 @@ class _SplashScreenState extends State<SplashScreen>
       // Note: If any permission hangs, we still want to move forward
       await [
         Permission.location,
-        Permission.notification,
         Permission.phone,
       ].request().timeout(const Duration(seconds: 5), onTimeout: () => {});
+
+
+      // If already logged in, fetch and update location
+      final session = SupabaseService.client.auth.currentSession;
+      if (session != null) {
+        try {
+          Position position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high,
+          );
+          await SupabaseService().updateUserLocation(
+            position.latitude,
+            position.longitude,
+          );
+        } catch (e) {
+          debugPrint("Location fetch error: $e");
+        }
+      }
+
 
     } catch (e) {
       debugPrint("Permission request error: $e");
@@ -69,19 +91,25 @@ class _SplashScreenState extends State<SplashScreen>
       await Future.delayed(const Duration(milliseconds: 500));
 
       if (mounted) {
+        final session = SupabaseService.client.auth.currentSession;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const WelcomePage()),
+          MaterialPageRoute(
+            builder: (context) => session != null ? const HomePage() : const WelcomePage(),
+          ),
         );
       }
+
     }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _textController.dispose();
     super.dispose();
   }
+
 
   @override
   Widget build(BuildContext context) {

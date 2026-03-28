@@ -180,7 +180,8 @@ class _AddMemberPageState extends State<AddMemberPage> {
             Row(
               children: [
                 Text(
-                  '+1',
+                  '+91',
+
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

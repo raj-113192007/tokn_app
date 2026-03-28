@@ -6,7 +6,11 @@ import 'forgot_password_page.dart';
 import 'widgets/animation_utils.dart';
 import 'services/api_service.dart';
 import 'home_page.dart';
-import 'signup_page.dart';
+import 'widgets/tokn_snackbar.dart';
+
+
+import 'services/supabase_service.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -90,7 +94,7 @@ class _LoginPageState extends State<LoginPage> {
                   FadeSlideTransition(
                     delay: const Duration(milliseconds: 100),
                     child: Text(
-                      'Sign In\nTo \nTokN',
+                      'Login\nTo \nTokN',
                       style: GoogleFonts.poppins(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -129,7 +133,11 @@ class _LoginPageState extends State<LoginPage> {
                       hintText: 'Email or Mobile Number',
                       icon: Icons.person_outline,
                       errorText: _identifierError,
+                      prefix: _identifierController.text.isNotEmpty && !RegExp(r'[^0-9]').hasMatch(_identifierController.text) 
+                        ? Text('+91 ', style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold)) 
+                        : null,
                     ),
+
                   ),
                   const SizedBox(height: 25),
                   FadeSlideTransition(
@@ -189,10 +197,9 @@ class _LoginPageState extends State<LoginPage> {
                                               (route) => false,
                                             );
                                           } else {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(content: Text(result['error'] ?? 'Login failed'), backgroundColor: Colors.red),
-                                            );
+                                            ToknSnackBar.show(context, message: result['message'] ?? 'Login failed');
                                           }
+
                                         }
                                       }
                                     : null,
@@ -210,7 +217,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               child: Center(
                                 child: Text(
-                                  'Sign in',
+                                  'Login',
                                   style: GoogleFonts.poppins(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
@@ -234,56 +241,40 @@ class _LoginPageState extends State<LoginPage> {
                                     bool isPhone = RegExp(r'^\d{10}$').hasMatch(input);
                                     
                                     setState(() => _isLoading = true);
-                                    final res = await ApiService.sendOtp(
-                                      email: isPhone ? null : input,
-                                      phone: isPhone ? input : null,
-                                    );
                                     
-                                    if (mounted) {
-                                      setState(() => _isLoading = false);
-                                      if (res['success'] == true) {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => LoginOtpPage(
-                                              identifier: input,
-                                              isPhone: isPhone,
-                                            ),
-                                          ),
-                                        );
-                                      } else if (res['error'] == 'User not found') {
-                                        // Show Dialog to redirect to Signup
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => AlertDialog(
-                                            title: const Text('Account not found'),
-                                            content: const Text('This email/phone is not registered. Would you like to create an account?'),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () => Navigator.pop(context),
-                                                child: const Text('Cancel'),
-                                              ),
-                                              ElevatedButton(
-                                                onPressed: () {
-                                                  Navigator.pop(context);
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(builder: (context) => const SignupPage()),
-                                                  );
-                                                },
-                                                child: const Text('Sign Up'),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      } else {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text(res['error'] ?? 'Failed to send OTP'), backgroundColor: Colors.red),
-                                        );
+                                      String formattedInput = input;
+                                      if (isPhone && !input.startsWith('+')) {
+                                        formattedInput = '+91$input';
                                       }
-                                    }
+
+                                      // Use ApiService for OTP sending
+                                      final result = await ApiService.sendOtp(
+                                        phone: isPhone ? formattedInput : null,
+                                        email: !isPhone ? formattedInput : null,
+                                      );
+
+                                      
+                                      if (mounted) {
+                                        setState(() => _isLoading = false);
+                                        if (result['success'] == true) {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => LoginOtpPage(
+                                                identifier: formattedInput,
+                                                isPhone: isPhone,
+                                              ),
+                                            ),
+                                          );
+                                        } else {
+                                          ToknSnackBar.show(context, message: result['message'] ?? 'OTP send failed');
+                                        }
+
+                                      }
+
                                   }
                                 : null,
+
                             child: Container(
                               width: double.infinity,
                               height: 55,
@@ -299,7 +290,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               child: Center(
                                 child: Text(
-                                  'Sign in with OTP',
+                                  'Login with OTP',
                                   style: GoogleFonts.poppins(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
@@ -362,6 +353,7 @@ class _LoginPageState extends State<LoginPage> {
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
     String? errorText,
+    Widget? prefix,
   }) {
     return TextField(
       controller: controller,
@@ -371,7 +363,9 @@ class _LoginPageState extends State<LoginPage> {
       obscureText: isPassword && !_isPasswordVisible,
       decoration: InputDecoration(
         prefixIcon: Icon(icon, color: Colors.black87),
+        prefix: prefix,
         errorText: errorText,
+
         errorStyle: const TextStyle(color: Colors.red, fontSize: 12),
         suffixIcon: Padding(
           padding: const EdgeInsets.only(right: 8.0),

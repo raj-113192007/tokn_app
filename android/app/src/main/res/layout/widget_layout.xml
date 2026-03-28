@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
+
     android:orientation="vertical"
-    android:padding="20dp"
+    android:padding="24dp"
     android:clipToOutline="true">
 
-    <!-- Header Section -->
+    <!-- Header: Title & Location Icon -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
@@ -24,44 +26,50 @@
                 android:layout_height="wrap_content"
                 android:text="City General"
                 android:textColor="#2E4C9D"
-                android:textSize="18sp"
+                android:textSize="20sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/widget_status_badge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="• LIVE"
-                android:textColor="#3B9966"
-                android:textSize="12sp"
+                android:text="● LIVE"
+                android:textColor="#4CAF50"
+                android:textSize="14sp"
                 android:textStyle="bold"
-                android:layout_marginTop="2dp"/>
+                android:layout_marginTop="4dp"/>
         </LinearLayout>
 
-        <!-- Placeholder for Location Icon -->
-        <View
-            android:id="@+id/widget_location_icon"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+        <!-- Location Icon with Circular Background -->
+        <FrameLayout
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:layout_alignParentEnd="true"
-            android:background="@android:drawable/ic_dialog_map"
-            android:backgroundTint="#F0F4FF"
-            android:padding="8dp"/>
+            android:background="@drawable/circle_background_light">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@android:drawable/ic_dialog_map" />
+
+        </FrameLayout>
     </RelativeLayout>
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#F0F0F0"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp"/>
+        android:background="#F5F5F5"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="20dp"/>
 
-    <!-- Numbers Section -->
+    <!-- Numbers Section: Side-by-Side -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:weightSum="2"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:weightSum="2">
 
         <!-- Column: SERVING -->
         <LinearLayout
@@ -75,26 +83,27 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="SERVING"
-                android:textColor="#A0A0A0"
-                android:textSize="10sp"
+                android:textColor="#BDBDBD"
+                android:textSize="12sp"
                 android:textStyle="bold" />
+
 
             <TextView
                 android:id="@+id/widget_serving_num"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="#42"
-                android:textColor="#3B9966"
-                android:textSize="28sp"
+                android:textColor="#4CAF50"
+                android:textSize="36sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Divider Line -->
+        <!-- Vertical Divider -->
         <View
             android:layout_width="1dp"
-            android:layout_height="40dp"
-            android:background="#F0F0F0"
-            android:layout_gravity="center_vertical"/>
+            android:layout_height="50dp"
+            android:background="#EEEEEE"
+            android:layout_marginHorizontal="8dp"/>
 
         <!-- Column: MINE -->
         <LinearLayout
@@ -108,9 +117,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="MINE"
-                android:textColor="#A0A0A0"
-                android:textSize="10sp"
+                android:textColor="#BDBDBD"
+                android:textSize="12sp"
                 android:textStyle="bold" />
+
 
             <TextView
                 android:id="@+id/widget_mine_num"
@@ -118,17 +128,17 @@
                 android:layout_height="wrap_content"
                 android:text="#48"
                 android:textColor="#2E4C9D"
-                android:textSize="28sp"
+                android:textSize="36sp"
                 android:textStyle="bold" />
         </LinearLayout>
     </LinearLayout>
 
     <View
         android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#F0F0F0"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="12dp"/>
+        android:layout_height="1.5dp"
+        android:background="#F5F5F5"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="16dp"/>
 
     <!-- Footer: Wait Time -->
     <LinearLayout
@@ -138,16 +148,22 @@
         android:layout_gravity="center"
         android:gravity="center">
 
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@android:drawable/ic_menu_recent_history" />
+
+
         <TextView
             android:id="@+id/widget_wait_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="~15 mins wait"
-            android:textColor="#404040"
+            android:textColor="#616161"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:drawableStart="@android:drawable/ic_menu_recent_history"
-            android:drawablePadding="8dp" />
+            android:layout_marginStart="10dp" />
     </LinearLayout>
 
 </LinearLayout>
+
