@@ -209,4 +209,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recentTransactions => 'RECENT TRANSACTIONS';
+
+  @override
+  String get emergencyContact => 'Emergency Contact';
+
+  @override
+  String get deleteAccount => 'Delete Account';
+
+  @override
+  String get deleteConfirmTitle => 'Delete Account';
+
+  @override
+  String get deleteConfirmDesc =>
+      'Are you sure you want to permanently delete your account? This action cannot be undone.';
+
+  @override
+  String get verifyOTP => 'Verify OTP';
+
+  @override
+  String get enterOTP => 'Enter 6-digit OTP sent to your phone';
+
+  @override
+  String get sendOTP => 'Send OTP';
+
+  @override
+  String get cancel => 'Cancel';
 }

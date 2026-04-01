@@ -32,6 +32,11 @@ class _ProfilePageState extends State<ProfilePage> {
   String _userName = 'User';
   String _userEmail = '';
   String _userPhone = '';
+  String _age = 'Not Set';
+  String _bloodGroup = 'Not Set';
+  String _customId = 'Pending';
+  String _tokensBooked = '0';
+
   late final ScrollController _profileScrollController;
   bool _isBalanceVisible = false;
   String? _avatarUrl;
@@ -63,6 +68,10 @@ class _ProfilePageState extends State<ProfilePage> {
         _userEmail = profile['email'] ?? 'Update email in settings';
         _userPhone = profile['phone_number'] ?? 'Update phone in settings';
         _avatarUrl = profile['avatar_url'];
+        _age = profile['age'] != null ? '${profile['age']} Years' : 'Not Set';
+        _bloodGroup = profile['blood_group'] ?? 'Not Set';
+        _customId = profile['custom_id'] ?? 'Pending';
+        // You could query tokens_booked from a separate table if needed
       });
     } else {
       final prefs = await SharedPreferences.getInstance();
@@ -360,17 +369,17 @@ class _ProfilePageState extends State<ProfilePage> {
                 // Info Grid
                 Row(
                   children: [
-                    Expanded(child: _buildInfoCard('Age', '28 Years')),
+                    Expanded(child: _buildInfoCard('Age', _age)),
                     const SizedBox(width: 15),
-                    Expanded(child: _buildInfoCard('Blood Group', 'O+ Positive', valueColor: Colors.redAccent)),
+                    Expanded(child: _buildInfoCard('Blood Group', _bloodGroup, valueColor: Colors.redAccent)),
                   ],
                 ),
                 const SizedBox(height: 15),
                 Row(
                   children: [
-                    Expanded(child: _buildInfoCard('Tokens Booked', '15')),
+                    Expanded(child: _buildInfoCard('Tokens Booked', _tokensBooked)),
                     const SizedBox(width: 15),
-                    Expanded(child: _buildInfoCard('Unique ID', '#HOSP-7890-XYZ', isCompact: true)),
+                    Expanded(child: _buildInfoCard('Unique ID', _customId, isCompact: true)),
                   ],
                 ),
                 const SizedBox(height: 15),

@@ -4,10 +4,11 @@ import 'widgets/animation_utils.dart';
 import 'widgets/glass_bottom_bar.dart';
 
 import 'services/api_service.dart';
+import 'services/supabase_service.dart';
 import 'widgets/tokn_snackbar.dart';
 
 
-class HospitalDetailsPage extends StatelessWidget {
+class HospitalDetailsPage extends StatefulWidget {
   final String hospitalId;
   final String hospitalName;
   final String hospitalImage;
@@ -18,6 +19,43 @@ class HospitalDetailsPage extends StatelessWidget {
     required this.hospitalName,
     required this.hospitalImage,
   });
+
+  @override
+  State<HospitalDetailsPage> createState() => _HospitalDetailsPageState();
+}
+
+class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
+  bool _isLiked = false;
+  bool _isLoadingLike = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkIfLiked();
+  }
+
+  Future<void> _checkIfLiked() async {
+    final liked = await SupabaseService().isHospitalLiked(widget.hospitalId);
+    if (mounted) {
+      setState(() {
+        _isLiked = liked;
+        _isLoadingLike = false;
+      });
+    }
+  }
+
+  Future<void> _toggleLike() async {
+    if (_isLoadingLike) return;
+    setState(() => _isLoadingLike = true);
+    try {
+      final nowLiked = await SupabaseService().toggleHospitalLike(widget.hospitalId);
+      if (mounted) setState(() => _isLiked = nowLiked);
+    } catch (e) {
+      if (mounted) ToknSnackBar.show(context, message: 'Failed to update favorite');
+    } finally {
+      if (mounted) setState(() => _isLoadingLike = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,10 +86,15 @@ class HospitalDetailsPage extends StatelessWidget {
             ),
           ),
           ScaleOnTap(
-            onTap: () {},
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              child: Icon(Icons.favorite_border, color: Colors.black),
+            onTap: _toggleLike,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: _isLoadingLike 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                  : Icon(
+                      _isLiked ? Icons.favorite : Icons.favorite_border, 
+                      color: _isLiked ? Colors.redAccent : Colors.black
+                    ),
             ),
           ),
         ],
@@ -68,7 +111,7 @@ class HospitalDetailsPage extends StatelessWidget {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     image: DecorationImage(
-                      image: NetworkImage(hospitalImage),
+                      image: NetworkImage(widget.hospitalImage),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -116,7 +159,7 @@ class HospitalDetailsPage extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          hospitalName.replaceAll('\n', ' '),
+                          widget.hospitalName.replaceAll('\n', ' '),
                           style: GoogleFonts.poppins(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -470,7 +513,7 @@ class HospitalDetailsPage extends StatelessWidget {
     );
 
     final result = await ApiService.createBooking(
-      hospitalId: hospitalId,
+      hospitalId: widget.hospitalId,
       date: dateStr,
       time: timeStr,
       type: type,

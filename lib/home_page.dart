@@ -38,8 +38,10 @@ class _HomePageState extends State<HomePage> {
   String _userName = 'User';
   List<dynamic> _realHospitals = [];
   List<dynamic> _upcomingBookings = [];
+  List<dynamic> _likedHospitalsPreview = [];
   bool _isLoadingHospitals = true;
   bool _isLoadingBookings = true;
+  bool _isLoadingLiked = true;
 
 
   @override
@@ -51,11 +53,22 @@ class _HomePageState extends State<HomePage> {
     _scrollNotifier.registerPageController('home', _homePageScrollController);
     _scrollNotifier.setCurrentPage('home');
     _loadUserName();
-    _fetchHospitals();
+    _fetchHospitals().then((_) => _fetchLikedHospitals());
     _fetchBookings();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkEmailVerification();
     });
+  }
+
+  Future<void> _fetchLikedHospitals() async {
+    setState(() => _isLoadingLiked = true);
+    final likedIds = await SupabaseService().getLikedHospitalIds();
+    if (mounted) {
+      setState(() {
+        _likedHospitalsPreview = _realHospitals.where((h) => likedIds.contains(h['_id'])).toList();
+        _isLoadingLiked = false;
+      });
+    }
   }
 
 
@@ -602,19 +615,19 @@ class _HomePageState extends State<HomePage> {
                   onMoreTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => LikedHospitalsPage(likedHospitals: _realHospitals.take(3).toList()),
+                      builder: (context) => const LikedHospitalsPage(),
                     ),
                   ),
                 ),
                 const SizedBox(height: 15),
-                _isLoadingHospitals
+                _isLoadingLiked
                     ? const Center(child: CircularProgressIndicator())
-                    : _realHospitals.isEmpty
+                    : _likedHospitalsPreview.isEmpty
                         ? Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             child: Text(
-                              'No liked hospitals found.',
-                              style: GoogleFonts.poppins(color: Colors.grey),
+                              'No liked hospitals yet. Tap the heart icon on any hospital to add it here!',
+                              style: GoogleFonts.poppins(color: Colors.grey, fontSize: 12),
                             ),
                           )
                         : SizedBox(
@@ -622,9 +635,9 @@ class _HomePageState extends State<HomePage> {
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
                               padding: const EdgeInsets.symmetric(horizontal: 20),
-                              itemCount: _realHospitals.take(3).length,
+                              itemCount: _likedHospitalsPreview.length > 3 ? 3 : _likedHospitalsPreview.length,
                               itemBuilder: (context, index) {
-                                final h = _realHospitals[index];
+                                final h = _likedHospitalsPreview[index];
                                 return _buildHospitalCard(
                                   context,
                                   h['_id'] ?? '',

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 
@@ -163,8 +164,12 @@ class SupabaseService {
   }) async {
     final user = client.auth.currentUser;
     if (user != null) {
+      // Generate a unique ID like "us213213"
+      final customId = 'us${Random().nextInt(900000) + 100000}';
+      
       await client.from('profiles').upsert({
         'id': user.id,
+        'custom_id': customId,
         'full_name': fullName,
         'email': email.trim().toLowerCase(),
         'phone_number': phone ?? user.phone,
@@ -172,6 +177,16 @@ class SupabaseService {
       });
     }
   }
+
+  // Update existing profile fields (e.g. from Edit Profile Page or Complete Profile Page)
+  Future<void> updateProfileDetails(Map<String, dynamic> data) async {
+    final user = client.auth.currentUser;
+    if (user != null) {
+      data['updated_at'] = DateTime.now().toIso8601String();
+      await client.from('profiles').update(data).eq('id', user.id);
+    }
+  }
+
 
 
   // Upload Profile Photo
@@ -222,5 +237,74 @@ class SupabaseService {
   Future<void> signOut() async {
     await client.auth.signOut();
   }
+
+  // 10. Delete User Account
+  Future<void> deleteUserAccount() async {
+    await client.rpc('delete_user');
+    await signOut();
+  }
+
+  // 11. Liked Hospitals
+  Future<bool> isHospitalLiked(String hospitalId) async {
+    final user = client.auth.currentUser;
+    if (user == null) return false;
+
+    try {
+      final data = await client
+          .from('liked_hospitals')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('hospital_id', hospitalId)
+          .maybeSingle();
+      return data != null;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> toggleHospitalLike(String hospitalId) async {
+    final user = client.auth.currentUser;
+    if (user == null) throw Exception('User not logged in');
+
+    final isLiked = await isHospitalLiked(hospitalId);
+    try {
+      if (isLiked) {
+        // Unlike
+        await client
+            .from('liked_hospitals')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('hospital_id', hospitalId);
+        return false;
+      } else {
+        // Like
+        await client.from('liked_hospitals').insert({
+          'user_id': user.id,
+          'hospital_id': hospitalId,
+        });
+        return true;
+      }
+    } catch (e) {
+      throw Exception('Failed to toggle like');
+    }
+  }
+
+  Future<List<String>> getLikedHospitalIds() async {
+    final user = client.auth.currentUser;
+    if (user == null) return [];
+
+    try {
+      final List<dynamic> data = await client
+          .from('liked_hospitals')
+          .select('hospital_id')
+          .eq('user_id', user.id);
+          
+      return data.map((e) => e['hospital_id'] as String).toList();
+    } catch (e) {
+      return [];
+    }
+  }
 }
+
+
 

@@ -163,49 +163,7 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
     super.dispose();
   }
 
-  final List<Map<String, dynamic>> _chats = [
-    {
-      'name': 'Dr. Sarah Jenkins',
-      'message': 'The test results are ready for your re...',
-      'time': '10:24 AM',
-      'unread': 2,
-      'isOnline': true,
-      'imageUrl': 'https://images.unsplash.com/photo-1559839734-2b71ef197ec2?w=200',
-    },
-    {
-      'name': 'Dr. Michael Chen',
-      'message': 'Your follow-up appointment is confirmed ...',
-      'time': 'Yesterday',
-      'unread': 0,
-      'isOnline': false,
-      'imageUrl': 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200',
-    },
-    {
-      'name': 'St. Mary\'s Reception',
-      'message': 'We have received your insurance docum...',
-      'time': 'Oct 24',
-      'unread': 0,
-      'isOnline': false,
-      'isReception': true,
-      'imageUrl': '', // Will use an icon
-    },
-    {
-      'name': 'Dr. Emily Watson',
-      'message': 'Please remember to fast for 8 hours befor...',
-      'time': 'Oct 22',
-      'unread': 0,
-      'isOnline': true,
-      'imageUrl': 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=200',
-    },
-    {
-      'name': 'Dr. Robert Wilson',
-      'message': 'I\'ve reviewed your pharmacy request. It\'s...',
-      'time': 'Oct 20',
-      'unread': 0,
-      'isOnline': false,
-      'imageUrl': 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=200',
-    },
-  ];
+  final List<Map<String, dynamic>> _chats = [];
 
   @override
   Widget build(BuildContext context) {

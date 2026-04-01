@@ -487,6 +487,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'RECENT TRANSACTIONS'**
   String get recentTransactions;
+
+  /// No description provided for @emergencyContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency Contact'**
+  String get emergencyContact;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteConfirmTitle;
+
+  /// No description provided for @deleteConfirmDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to permanently delete your account? This action cannot be undone.'**
+  String get deleteConfirmDesc;
+
+  /// No description provided for @verifyOTP.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify OTP'**
+  String get verifyOTP;
+
+  /// No description provided for @enterOTP.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 6-digit OTP sent to your phone'**
+  String get enterOTP;
+
+  /// No description provided for @sendOTP.
+  ///
+  /// In en, this message translates to:
+  /// **'Send OTP'**
+  String get sendOTP;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
 }
 
 class _AppLocalizationsDelegate

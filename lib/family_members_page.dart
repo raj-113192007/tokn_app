@@ -57,40 +57,21 @@ class FamilyMembersPage extends StatelessWidget {
             ),
             const SizedBox(height: 32),
             
-            _buildMemberCard(
-              context,
-              name: 'Elena Rodriguez',
-              relationship: 'Mother',
-              accessType: l10n.bookingAccess,
-              icon: Icons.person,
-              iconBgColor: const Color(0xFFE3F2FD),
-              iconColor: const Color(0xFF2196F3),
-              isAccessPositive: true,
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              child: Column(
+                children: [
+                   Icon(Icons.family_restroom_outlined, size: 64, color: Colors.grey[300]),
+                   const SizedBox(height: 16),
+                   Text(
+                     'No family members added yet.',
+                     style: GoogleFonts.poppins(color: Colors.grey[600], fontSize: 16),
+                   ),
+                ],
+              ),
             ),
 
-            
-            _buildMemberCard(
-              context,
-              name: 'Marco Rodriguez',
-              relationship: 'Spouse',
-              accessType: l10n.bookingAccess,
-              icon: Icons.person,
-              iconBgColor: const Color(0xFFE8F5E9),
-              iconColor: const Color(0xFF4CAF50),
-              isAccessPositive: true,
-            ),
-
-            
-            _buildMemberCard(
-              context,
-              name: 'Leo Rodriguez',
-              relationship: 'Child',
-              accessType: l10n.limitedAccess,
-              icon: Icons.child_care,
-              iconBgColor: const Color(0xFFFFF3E0),
-              iconColor: const Color(0xFFFF9800),
-              isAccessPositive: false,
-            ),
 
             
             _buildAddButton(context, l10n.addFamilyMember),

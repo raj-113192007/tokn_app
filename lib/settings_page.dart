@@ -226,8 +226,11 @@ class _SettingsPageState extends State<SettingsPage> {
 
             const SizedBox(height: 20),
             _buildLogoutButton(context),
+            const SizedBox(height: 12),
+            _buildDeleteAccountButton(context),
             const SizedBox(height: 10),
           ],
+
         ),
       ),
     );
@@ -464,6 +467,167 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
     );
   }
+
+  Widget _buildDeleteAccountButton(BuildContext context) {
+    return ScaleOnTap(
+      onTap: () {
+        _showDeleteConfirmationDialog(context);
+      },
+      child: Container(
+        height: 46,
+        decoration: BoxDecoration(
+          color: Colors.redAccent.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.redAccent.withOpacity(0.2)),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.delete_forever_outlined, color: Colors.redAccent),
+            const SizedBox(width: 10),
+            Text(
+              AppLocalizations.of(context)!.deleteAccount,
+              style: GoogleFonts.poppins(
+                color: Colors.redAccent,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmationDialog(BuildContext context) {
+    final user = SupabaseService.client.auth.currentUser;
+    final phone = user?.phone;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        bool isSendingOTP = false;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text(AppLocalizations.of(context)!.deleteConfirmTitle, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(AppLocalizations.of(context)!.deleteConfirmDesc, style: GoogleFonts.poppins(fontSize: 13)),
+                  const SizedBox(height: 16),
+                  if (phone != null && phone.isNotEmpty)
+                    Text('A verification code will be sent to $phone.', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold))
+                  else
+                    Text('Warning: No phone number associated with your account.', style: GoogleFonts.poppins(fontSize: 12, color: Colors.redAccent)),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(AppLocalizations.of(context)!.cancel, style: GoogleFonts.poppins(color: Colors.grey)),
+                ),
+                isSendingOTP
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                    : TextButton(
+                        onPressed: (phone == null || phone.isEmpty) ? null : () async {
+                          setDialogState(() => isSendingOTP = true);
+                          try {
+                            // Send OTP
+                            await SupabaseService().signInWithOtp(phone: phone);
+                            if (context.mounted) {
+                              Navigator.pop(context); // close confirm dialog
+                              _showDeleteOTPVerifyDialog(context, phone); // open OTP dialog
+                            }
+                          } catch (e) {
+                            if (context.mounted) ToknSnackBar.show(context, message: e.toString());
+                          } finally {
+                            if (mounted) setDialogState(() => isSendingOTP = false);
+                          }
+                        },
+                        child: Text(AppLocalizations.of(context)!.sendOTP, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                      ),
+              ],
+            );
+          }
+        );
+      },
+    );
+  }
+
+  void _showDeleteOTPVerifyDialog(BuildContext context, String phone) {
+    final otpController = TextEditingController();
+    bool isVerifying = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text(AppLocalizations.of(context)!.verifyOTP, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(AppLocalizations.of(context)!.enterOTP, style: GoogleFonts.poppins(fontSize: 13)),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: otpController,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 8),
+                    decoration: const InputDecoration(counterText: "", border: OutlineInputBorder()),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(AppLocalizations.of(context)!.cancel, style: GoogleFonts.poppins(color: Colors.grey)),
+                ),
+                isVerifying
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                    : TextButton(
+                        onPressed: () async {
+                          if (otpController.text.length < 6) return;
+                          setDialogState(() => isVerifying = true);
+                          try {
+                            await SupabaseService().verifyOTP(
+                              phone: phone,
+                              token: otpController.text.trim(),
+                            );
+                            
+                            // Verification succeeded, delete the user
+                            await SupabaseService().deleteUserAccount();
+                            
+                            if (context.mounted) {
+                              ToknSnackBar.show(context, message: 'Account deleted successfully.');
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(builder: (context) => const WelcomePage()),
+                                (route) => false,
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) ToknSnackBar.show(context, message: e.toString());
+                            setDialogState(() => isVerifying = false);
+                          }
+                        },
+                        child: Text(AppLocalizations.of(context)!.deleteAccount, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                      ),
+              ],
+            );
+          }
+        );
+      },
+    );
+  }
+
 
   void _showLanguageSelectionDialog(BuildContext context) {
     showDialog(

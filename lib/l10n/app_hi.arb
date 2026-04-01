@@ -63,5 +63,14 @@
   "viewHistory": "इतिहास देखें",
   "availableBalance": "उपलब्ध शेष",
   "addMoney": "पैसे जोड़ें",
-  "recentTransactions": "हाल के लेनदेन"
+  "recentTransactions": "हाल के लेनदेन",
+  "emergencyContact": "आपातकालीन संपर्क",
+  "deleteAccount": "खाता हटाएं",
+  "deleteConfirmTitle": "खाता हटाएं",
+  "deleteConfirmDesc": "क्या आप वाकई अपना खाता स्थायी रूप से हटाना चाहते हैं? इसे वापस नहीं लिया जा सकता।",
+  "verifyOTP": "OTP सत्यापित करें",
+  "enterOTP": "6-अंकों का OTP दर्ज करें",
+  "sendOTP": "OTP भेजें",
+  "cancel": "रद्द करें"
 }
+

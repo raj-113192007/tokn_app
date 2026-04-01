@@ -72,5 +72,13 @@
   "viewHistory": "View History",
   "availableBalance": "AVAILABLE BALANCE",
   "addMoney": "Add Money",
-  "recentTransactions": "RECENT TRANSACTIONS"
+  "recentTransactions": "RECENT TRANSACTIONS",
+  "emergencyContact": "Emergency Contact",
+  "deleteAccount": "Delete Account",
+  "deleteConfirmTitle": "Delete Account",
+  "deleteConfirmDesc": "Are you sure you want to permanently delete your account? This action cannot be undone.",
+  "verifyOTP": "Verify OTP",
+  "enterOTP": "Enter 6-digit OTP sent to your phone",
+  "sendOTP": "Send OTP",
+  "cancel": "Cancel"
 }

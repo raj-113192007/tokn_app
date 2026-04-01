@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:tokn/l10n/app_localizations.dart';
 import 'widgets/animation_utils.dart';
 import 'widgets/tokn_snackbar.dart';
+import 'services/supabase_service.dart';
 
 
 class EditProfilePage extends StatefulWidget {
@@ -16,6 +17,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final TextEditingController _nameController = TextEditingController(text: 'John Doe');
   final TextEditingController _emailController = TextEditingController(text: 'john.doe@email.com');
   final TextEditingController _phoneController = TextEditingController(text: '9876543210');
+  final TextEditingController _emergencyContactController = TextEditingController();
+  bool _isLoading = false;
+
 
 
   @override
@@ -55,6 +59,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
             _buildInputField(l10n.emailAddress, _emailController, Icons.email_outlined, keyboardType: TextInputType.emailAddress),
             const SizedBox(height: 20),
             _buildInputField(l10n.phoneNumber, _phoneController, Icons.phone_android_outlined, keyboardType: TextInputType.phone, isPhone: true),
+            const SizedBox(height: 20),
+            _buildInputField(l10n.emergencyContact, _emergencyContactController, Icons.contact_emergency_outlined, keyboardType: TextInputType.phone, isPhone: true),
 
             const SizedBox(height: 60),
             _buildSaveButton(l10n.updateProfile),
@@ -183,9 +189,30 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Widget _buildSaveButton(String text) {
     return ScaleOnTap(
-      onTap: () {
-        ToknSnackBar.show(context, message: 'Profile updated successfully!', type: SnackBarType.success);
-        Navigator.pop(context);
+      onTap: _isLoading ? null : () async {
+        setState(() => _isLoading = true);
+        try {
+          final data = {
+            if (_nameController.text.isNotEmpty) 'full_name': _nameController.text.trim(),
+            if (_phoneController.text.isNotEmpty) 'phone_number': _phoneController.text.trim(),
+            if (_emergencyContactController.text.isNotEmpty) 'emergency_contact': _emergencyContactController.text.trim(),
+            // email is usually managed by Supabase auth directly, so changing the user's email requires an auth update
+            // However, updating the profile email is possible here
+            if (_emailController.text.isNotEmpty) 'email': _emailController.text.trim().toLowerCase(),
+          };
+
+          if (data.isNotEmpty) {
+            await SupabaseService().updateProfileDetails(data);
+          }
+          if (mounted) {
+            ToknSnackBar.show(context, message: 'Profile updated successfully!', type: SnackBarType.success);
+            Navigator.pop(context);
+          }
+        } catch (e) {
+             if (mounted) ToknSnackBar.show(context, message: e.toString());
+        } finally {
+             if (mounted) setState(() => _isLoading = false);
+        }
       },
 
       child: Container(
@@ -203,16 +230,23 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ],
         ),
         child: Center(
-          child: Text(
-            text,
-            style: GoogleFonts.poppins(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
+          child: _isLoading 
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                )
+              : Text(
+                  text,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
         ),
       ),
     );
   }
 }
+

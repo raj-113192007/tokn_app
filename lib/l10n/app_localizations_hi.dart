@@ -209,4 +209,29 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get recentTransactions => 'हाल के लेनदेन';
+
+  @override
+  String get emergencyContact => 'आपातकालीन संपर्क';
+
+  @override
+  String get deleteAccount => 'खाता हटाएं';
+
+  @override
+  String get deleteConfirmTitle => 'खाता हटाएं';
+
+  @override
+  String get deleteConfirmDesc =>
+      'क्या आप वाकई अपना खाता स्थायी रूप से हटाना चाहते हैं? इसे वापस नहीं लिया जा सकता।';
+
+  @override
+  String get verifyOTP => 'OTP सत्यापित करें';
+
+  @override
+  String get enterOTP => '6-अंकों का OTP दर्ज करें';
+
+  @override
+  String get sendOTP => 'OTP भेजें';
+
+  @override
+  String get cancel => 'रद्द करें';
 }

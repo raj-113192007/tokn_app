@@ -4,24 +4,48 @@ import 'hospital_details_page.dart';
 import 'widgets/animation_utils.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
-class LikedHospitalsPage extends StatefulWidget {
-  final List<dynamic> likedHospitals;
+import 'services/api_service.dart';
+import 'services/supabase_service.dart';
 
-  const LikedHospitalsPage({super.key, required this.likedHospitals});
+class LikedHospitalsPage extends StatefulWidget {
+  const LikedHospitalsPage({super.key});
 
   @override
   State<LikedHospitalsPage> createState() => _LikedHospitalsPageState();
 }
 
 class _LikedHospitalsPageState extends State<LikedHospitalsPage> {
-  late List<dynamic> _filteredHospitals;
+  List<dynamic> _allLikedHospitals = [];
+  List<dynamic> _filteredHospitals = [];
   final TextEditingController _searchController = TextEditingController();
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _filteredHospitals = widget.likedHospitals;
     _searchController.addListener(_filterHospitals);
+    _fetchLikedHospitals();
+  }
+
+  Future<void> _fetchLikedHospitals() async {
+    setState(() => _isLoading = true);
+    try {
+      final likedIds = await SupabaseService().getLikedHospitalIds();
+      final response = await ApiService.getHospitals();
+      
+      if (response['success'] == true) {
+        final allHospitals = response['data'] as List<dynamic>;
+        setState(() {
+          _allLikedHospitals = allHospitals.where((h) => likedIds.contains(h['_id'])).toList();
+          _filteredHospitals = _allLikedHospitals;
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -31,10 +55,22 @@ class _LikedHospitalsPageState extends State<LikedHospitalsPage> {
     super.dispose();
   }
 
+  Future<void> _unlikeHospital(String id) async {
+    try {
+      await SupabaseService().toggleHospitalLike(id);
+      setState(() {
+        _allLikedHospitals.removeWhere((h) => h['_id'] == id);
+        _filterHospitals(); // Re-apply search filter
+      });
+    } catch (e) {
+      // ignore
+    }
+  }
+
   void _filterHospitals() {
     final query = _searchController.text.toLowerCase();
     setState(() {
-      _filteredHospitals = widget.likedHospitals.where((h) {
+      _filteredHospitals = _allLikedHospitals.where((h) {
         final name = (h['name'] ?? '').toString().toLowerCase();
         return name.contains(query);
       }).toList();
@@ -89,7 +125,9 @@ class _LikedHospitalsPageState extends State<LikedHospitalsPage> {
             ),
           ),
           Expanded(
-            child: _filteredHospitals.isEmpty
+            child: _isLoading 
+              ? const Center(child: CircularProgressIndicator())
+              : _filteredHospitals.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -188,13 +226,16 @@ class _LikedHospitalsPageState extends State<LikedHospitalsPage> {
                   Positioned(
                     top: 10,
                     right: 10,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
+                    child: ScaleOnTap(
+                      onTap: () => _unlikeHospital(id),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.favorite, color: Colors.redAccent, size: 16),
                       ),
-                      child: const Icon(Icons.favorite, color: Colors.redAccent, size: 16),
                     ),
                   ),
                 ],
