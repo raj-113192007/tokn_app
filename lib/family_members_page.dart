@@ -4,10 +4,46 @@ import 'package:tokn/l10n/app_localizations.dart';
 import 'widgets/animation_utils.dart';
 import 'add_member_page.dart';
 import 'edit_member_page.dart';
+import 'services/supabase_service.dart';
+import 'widgets/tokn_snackbar.dart';
 
-
-class FamilyMembersPage extends StatelessWidget {
+class FamilyMembersPage extends StatefulWidget {
   const FamilyMembersPage({super.key});
+
+  @override
+  State<FamilyMembersPage> createState() => _FamilyMembersPageState();
+}
+
+class _FamilyMembersPageState extends State<FamilyMembersPage> {
+  List<Map<String, dynamic>> _members = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMembers();
+  }
+
+  Future<void> _fetchMembers() async {
+    setState(() => _isLoading = true);
+    final members = await SupabaseService().getFamilyMembers();
+    if (mounted) {
+      setState(() {
+        _members = members;
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _deleteMember(String id) async {
+    final success = await SupabaseService().deleteFamilyMember(id);
+    if (success && mounted) {
+      setState(() {
+        _members.removeWhere((m) => m['id'] == id);
+      });
+      ToknSnackBar.show(context, message: 'Member deleted', type: SnackBarType.success);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,22 +93,45 @@ class FamilyMembersPage extends StatelessWidget {
             ),
             const SizedBox(height: 32),
             
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 40),
-              child: Column(
-                children: [
-                   Icon(Icons.family_restroom_outlined, size: 64, color: Colors.grey[300]),
-                   const SizedBox(height: 16),
-                   Text(
-                     'No family members added yet.',
-                     style: GoogleFonts.poppins(color: Colors.grey[600], fontSize: 16),
-                   ),
-                ],
-              ),
-            ),
-
-
+            _isLoading 
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              : _members.isEmpty
+                ? Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 40),
+                    child: Column(
+                      children: [
+                         Icon(Icons.family_restroom_outlined, size: 64, color: Colors.grey[300]),
+                         const SizedBox(height: 16),
+                         Text(
+                           'No family members added yet.',
+                           style: GoogleFonts.poppins(color: Colors.grey[600], fontSize: 16),
+                         ),
+                      ],
+                    ),
+                  )
+                : Column(
+                    children: _members.map((member) {
+                      final name = member['full_name'] ?? 'Unknown';
+                      final relationship = member['relationship'] ?? 'Member';
+                      final hasAccess = member['booking_access'] == true;
+                      final id = member['id'];
+                      return _buildMemberCard(
+                        context,
+                        id: id,
+                        name: '$name${member['age'] != null ? ' (${member['age']} Yrs)' : ''}',
+                        relationship: relationship,
+                        accessType: hasAccess ? 'Can book appointments' : 'No booking access',
+                        icon: Icons.person_outlined,
+                        iconBgColor: const Color(0xFFE3F2FD),
+                        iconColor: const Color(0xFF1976D2),
+                        isAccessPositive: hasAccess,
+                      );
+                    }).toList(),
+                  ),
             
             _buildAddButton(context, l10n.addFamilyMember),
             
@@ -91,6 +150,7 @@ class FamilyMembersPage extends StatelessWidget {
 
   Widget _buildMemberCard(
     BuildContext context, {
+    required String id,
     required String name,
     required String relationship,
     required String accessType,
@@ -223,7 +283,7 @@ class FamilyMembersPage extends StatelessWidget {
 
               const SizedBox(width: 12),
               ScaleOnTap(
-                onTap: () {},
+                onTap: () => _deleteMember(id),
                 child: Container(
                   width: 44,
                   height: 44,
@@ -243,11 +303,14 @@ class FamilyMembersPage extends StatelessWidget {
 
   Widget _buildAddButton(BuildContext context, String text) {
     return ScaleOnTap(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const AddMemberPage()),
         );
+        if (result == true) {
+          _fetchMembers();
+        }
       },
       child: Container(
         width: double.infinity,

@@ -304,6 +304,56 @@ class SupabaseService {
       return [];
     }
   }
+
+  // 12. Family Members
+  Future<bool> addFamilyMember(Map<String, dynamic> data) async {
+    final user = client.auth.currentUser;
+    if (user == null) throw Exception('User not logged in');
+    
+    data['user_id'] = user.id;
+
+    try {
+      await client.from('family_members').insert(data);
+      return true;
+    } catch (e) {
+      print('Error adding family member: $e');
+      throw Exception('Failed to add family member');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getFamilyMembers() async {
+    final user = client.auth.currentUser;
+    if (user == null) return [];
+
+    try {
+      final List<dynamic> data = await client
+          .from('family_members')
+          .select()
+          .eq('user_id', user.id)
+          .order('created_at', ascending: false);
+          
+      return List<Map<String, dynamic>>.from(data);
+    } catch (e) {
+      print('Error fetching family members: $e');
+      return [];
+    }
+  }
+
+  Future<bool> deleteFamilyMember(String memberId) async {
+    final user = client.auth.currentUser;
+    if (user == null) return false;
+
+    try {
+      await client
+          .from('family_members')
+          .delete()
+          .eq('id', memberId)
+          .eq('user_id', user.id);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 }
 
 

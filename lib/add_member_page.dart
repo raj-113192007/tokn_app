@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tokn/l10n/app_localizations.dart';
 import 'widgets/animation_utils.dart';
+import 'services/supabase_service.dart';
+import 'widgets/tokn_snackbar.dart';
 
 class AddMemberPage extends StatefulWidget {
   const AddMemberPage({super.key});
@@ -15,10 +17,57 @@ class _AddMemberPageState extends State<AddMemberPage> {
   String? _selectedGender;
   String? _selectedBloodGroup;
   bool _enableBookingAccess = true;
+  bool _isLoading = false;
+
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
 
   final List<String> _relationships = ['Mother', 'Father', 'Spouse', 'Child', 'Sibling', 'Other'];
   final List<String> _genders = ['Male', 'Female', 'Other'];
   final List<String> _bloodGroups = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _ageController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveMember() async {
+    if (_nameController.text.trim().isEmpty) {
+      ToknSnackBar.show(context, message: 'Please enter a name');
+      return;
+    }
+    if (_selectedRelationship == null) {
+      ToknSnackBar.show(context, message: 'Please select a relationship');
+      return;
+    }
+    
+    setState(() => _isLoading = true);
+
+    try {
+      final success = await SupabaseService().addFamilyMember({
+        'full_name': _nameController.text.trim(),
+        'relationship': _selectedRelationship,
+        'age': int.tryParse(_ageController.text.trim()),
+        'gender': _selectedGender,
+        'blood_group': _selectedBloodGroup,
+        'phone_number': _phoneController.text.trim(),
+        'booking_access': _enableBookingAccess,
+      });
+
+      if (success && mounted) {
+        ToknSnackBar.show(context, message: 'Family member added!', type: SnackBarType.success);
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) ToknSnackBar.show(context, message: 'Failed to add member', type: SnackBarType.error);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +155,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
             const SizedBox(height: 32),
             
             _buildFieldLabel(l10n.fullName),
-            _buildInputField(hint: 'e.g. Johnathan Smith'),
+            _buildInputField(hint: 'e.g. Johnathan Smith', controller: _nameController),
             
             const SizedBox(height: 20),
             Row(
@@ -133,7 +182,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildFieldLabel(l10n.age),
-                      _buildInputField(hint: l10n.years, keyboardType: TextInputType.number),
+                      _buildInputField(hint: l10n.years, keyboardType: TextInputType.number, controller: _ageController),
                     ],
                   ),
                 ),
@@ -190,7 +239,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildInputField(hint: '555-0123', keyboardType: TextInputType.phone),
+                  child: _buildInputField(hint: '555-0123', keyboardType: TextInputType.phone, controller: _phoneController),
                 ),
               ],
             ),
@@ -239,13 +288,14 @@ class _AddMemberPageState extends State<AddMemberPage> {
     );
   }
 
-  Widget _buildInputField({required String hint, TextInputType keyboardType = TextInputType.text}) {
+  Widget _buildInputField({required String hint, TextInputType keyboardType = TextInputType.text, TextEditingController? controller}) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFF7F9FC),
         border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
       ),
       child: TextField(
+        controller: controller,
         keyboardType: keyboardType,
         style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueGrey[900]),
         decoration: InputDecoration(
@@ -334,7 +384,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
 
   Widget _buildSaveButton(BuildContext context, String text) {
     return ScaleOnTap(
-      onTap: () => Navigator.pop(context),
+      onTap: _saveMember,
       child: Container(
         width: double.infinity,
         height: 56,
@@ -350,14 +400,16 @@ class _AddMemberPageState extends State<AddMemberPage> {
           ],
         ),
         child: Center(
-          child: Text(
-            text,
-            style: GoogleFonts.poppins(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
+          child: _isLoading 
+            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            : Text(
+                text,
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
         ),
       ),
     );
