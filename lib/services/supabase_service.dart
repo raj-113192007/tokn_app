@@ -165,7 +165,7 @@ class SupabaseService {
     final user = client.auth.currentUser;
     if (user != null) {
       // Generate a unique ID like "us213213"
-      final customId = 'us${Random().nextInt(900000) + 100000}';
+      final customId = 'usr${Random().nextInt(900000) + 100000}';
       
       await client.from('profiles').upsert({
         'id': user.id,
