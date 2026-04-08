@@ -73,7 +73,7 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         _userName = profile['full_name'] ?? 'User';
         _userEmail = profile['email'] ?? 'Update email in settings';
-        _userPhone = profile['phone_number'] ?? 'Update phone in settings';
+        _userPhone = profile['phone'] ?? 'Update phone in settings';
         _avatarUrl = profile['avatar_url'];
         _age = profile['age'] != null ? '${profile['age']} ${AppLocalizations.of(context)!.years}' : 'Not Set';
         _bloodGroup = profile['blood_group'] ?? 'Not Set';

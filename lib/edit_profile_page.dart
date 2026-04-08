@@ -38,7 +38,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         setState(() {
           _nameController.text = profile['full_name'] ?? '';
           _emailController.text = profile['email'] ?? '';
-          _phoneController.text = (profile['phone_number'] ?? '').replaceAll('+91', '');
+          _phoneController.text = (profile['phone'] ?? '').replaceAll('+91', '');
           _emergencyContactController.text = profile['emergency_contact'] ?? '';
           _avatarUrl = profile['avatar_url'];
           _isInitLoading = false;
@@ -277,7 +277,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
           final data = {
             'full_name': _nameController.text.trim(),
-            'phone_number': formattedPhone,
+            'phone': formattedPhone,
             'emergency_contact': _emergencyContactController.text.trim(),
             'email': _emailController.text.trim().toLowerCase(),
             'avatar_url': _avatarUrl,

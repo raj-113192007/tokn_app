@@ -4,6 +4,8 @@ import 'package:tokn/l10n/app_localizations.dart';
 import 'widgets/animation_utils.dart';
 import 'services/supabase_service.dart';
 import 'widgets/tokn_snackbar.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class AddMemberPage extends StatefulWidget {
   const AddMemberPage({super.key});
@@ -22,6 +24,10 @@ class _AddMemberPageState extends State<AddMemberPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  
+  File? _selectedImage;
+  final ImagePicker _picker = ImagePicker();
+  String? _uploadedImageUrl;
 
   final List<String> _relationships = ['Mother', 'Father', 'Spouse', 'Child', 'Sibling', 'Other'];
   final List<String> _genders = ['Male', 'Female', 'Other'];
@@ -33,6 +39,20 @@ class _AddMemberPageState extends State<AddMemberPage> {
     _ageController.dispose();
     _phoneController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+      );
+      if (image != null) {
+        setState(() => _selectedImage = File(image.path));
+      }
+    } catch (e) {
+      if (mounted) ToknSnackBar.show(context, message: 'Error picking image');
+    }
   }
 
   Future<void> _saveMember() async {
@@ -48,17 +68,22 @@ class _AddMemberPageState extends State<AddMemberPage> {
     setState(() => _isLoading = true);
 
     try {
-      final success = await SupabaseService().addFamilyMember({
+      final member = await SupabaseService().addFamilyMember({
         'full_name': _nameController.text.trim(),
         'relationship': _selectedRelationship,
         'age': int.tryParse(_ageController.text.trim()),
         'gender': _selectedGender,
         'blood_group': _selectedBloodGroup,
-        'phone_number': _phoneController.text.trim(),
+        'phone': _phoneController.text.trim(),
         'booking_access': _enableBookingAccess,
       });
 
-      if (success && mounted) {
+      if (member != null && mounted) {
+        // If there's an image, upload it now
+        if (_selectedImage != null) {
+          await SupabaseService().uploadFamilyMemberPhoto(member['id'], _selectedImage!.path);
+        }
+        
         ToknSnackBar.show(context, message: 'Family member added!', type: SnackBarType.success);
         Navigator.pop(context, true);
       }
@@ -150,6 +175,44 @@ class _AddMemberPageState extends State<AddMemberPage> {
                 fontSize: 14,
                 color: Colors.grey[600],
                 height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            Center(
+              child: Stack(
+                children: [
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        shape: BoxShape.circle,
+                        image: _selectedImage != null
+                            ? DecorationImage(image: FileImage(_selectedImage!), fit: BoxFit.cover)
+                            : null,
+                      ),
+                      child: _selectedImage == null
+                          ? Icon(Icons.add_a_photo_outlined, color: Colors.grey[400], size: 30)
+                          : null,
+                    ),
+                  ),
+                  if (_selectedImage != null)
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedImage = null),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                          child: const Icon(Icons.close, color: Colors.white, size: 16),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 32),

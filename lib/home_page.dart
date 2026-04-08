@@ -507,55 +507,58 @@ class _HomePageState extends State<HomePage> {
               children: [
                 // Banner Carousel
                 const SizedBox(height: 10),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: ScaleOnTap(
-                    onTap: () {},
-                    child: Stack(
-                      children: [
-                        Container(
-                          height: 180,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            color: Colors.grey[300],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Image.network(
-                              'https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=800',
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Container(color: Colors.grey[300]),
+                FadeSlideTransition(
+                  delay: const Duration(milliseconds: 100),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: ScaleOnTap(
+                      onTap: () {},
+                      child: Stack(
+                        children: [
+                          Container(
+                            height: 180,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              color: Colors.grey[300],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Image.network(
+                                'https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=800',
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(color: Colors.grey[300]),
+                              ),
                             ),
                           ),
-                        ),
-                        Container(
-                          height: 180,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black.withOpacity(0.5),
-                              ],
+                          Container(
+                            height: 180,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withOpacity(0.5),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                        Positioned(
-                          bottom: 20,
-                          left: 20,
-                          child: Text(
-                            AppLocalizations.of(context)!.bannerTitle,
-                            style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
+                          Positioned(
+                            bottom: 20,
+                            left: 20,
+                            child: Text(
+                              AppLocalizations.of(context)!.bannerTitle,
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -584,12 +587,15 @@ class _HomePageState extends State<HomePage> {
 
 
                 // Hospitals Section
-                _buildSectionHeader(
-                  AppLocalizations.of(context)!.hospitals,
-                  onMoreTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AllHospitalsPage(hospitals: _realHospitals),
+                FadeSlideTransition(
+                  delay: const Duration(milliseconds: 250),
+                  child: _buildSectionHeader(
+                    AppLocalizations.of(context)!.hospitals,
+                    onMoreTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AllHospitalsPage(hospitals: _realHospitals),
+                      ),
                     ),
                   ),
                 ),
