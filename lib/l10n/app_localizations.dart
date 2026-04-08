@@ -7,6 +7,7 @@ import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
 import 'app_localizations_hi.dart';
+import 'app_localizations_pa.dart';
 
 // ignore_for_file: type=lint
 
@@ -96,21 +97,22 @@ abstract class AppLocalizations {
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
     Locale('hi'),
+    Locale('pa'),
   ];
 
-  /// The title of the settings page
+  /// No description provided for @settings.
   ///
   /// In en, this message translates to:
   /// **'Settings'**
   String get settings;
 
-  /// Label for the language selection option
+  /// No description provided for @language.
   ///
   /// In en, this message translates to:
   /// **'Language'**
   String get language;
 
-  /// Title of the language selection dialog
+  /// No description provided for @selectLanguage.
   ///
   /// In en, this message translates to:
   /// **'Select Language'**
@@ -127,6 +129,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hindi'**
   String get hindi;
+
+  /// No description provided for @punjabi.
+  ///
+  /// In en, this message translates to:
+  /// **'Punjabi'**
+  String get punjabi;
 
   /// No description provided for @biometricLogin.
   ///
@@ -446,6 +454,12 @@ abstract class AppLocalizations {
   /// **'Select'**
   String get select;
 
+  /// No description provided for @selectPatient.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Patient'**
+  String get selectPatient;
+
   /// No description provided for @type.
   ///
   /// In en, this message translates to:
@@ -535,6 +549,534 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel'**
   String get cancel;
+
+  /// No description provided for @directions.
+  ///
+  /// In en, this message translates to:
+  /// **'Directions'**
+  String get directions;
+
+  /// No description provided for @greeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Hi'**
+  String get greeting;
+
+  /// No description provided for @searchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by category or name'**
+  String get searchHint;
+
+  /// No description provided for @selectCity.
+  ///
+  /// In en, this message translates to:
+  /// **'Select City'**
+  String get selectCity;
+
+  /// No description provided for @bannerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Find Best Doctors\nNear You'**
+  String get bannerTitle;
+
+  /// No description provided for @upcomingBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming Booking'**
+  String get upcomingBooking;
+
+  /// No description provided for @hospitals.
+  ///
+  /// In en, this message translates to:
+  /// **'Hospitals'**
+  String get hospitals;
+
+  /// No description provided for @likedHospitals.
+  ///
+  /// In en, this message translates to:
+  /// **'Liked Hospitals'**
+  String get likedHospitals;
+
+  /// No description provided for @noLikedHospitals.
+  ///
+  /// In en, this message translates to:
+  /// **'No liked hospitals yet.'**
+  String get noLikedHospitals;
+
+  /// No description provided for @categories.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get categories;
+
+  /// No description provided for @recentlyVisited.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently Visited'**
+  String get recentlyVisited;
+
+  /// No description provided for @noHospitalsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No hospitals found near you.'**
+  String get noHospitalsFound;
+
+  /// No description provided for @clearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get clearAll;
+
+  /// No description provided for @noNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'No new notifications'**
+  String get noNotifications;
+
+  /// No description provided for @notificationDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll notify you when something important arrives.'**
+  String get notificationDisclaimer;
+
+  /// No description provided for @hospitalDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Hospital Details'**
+  String get hospitalDetails;
+
+  /// No description provided for @online.
+  ///
+  /// In en, this message translates to:
+  /// **'ONLINE'**
+  String get online;
+
+  /// No description provided for @aboutHospital.
+  ///
+  /// In en, this message translates to:
+  /// **'About Hospital Services'**
+  String get aboutHospital;
+
+  /// No description provided for @specialties.
+  ///
+  /// In en, this message translates to:
+  /// **'Specialties'**
+  String get specialties;
+
+  /// No description provided for @specialistDoctors.
+  ///
+  /// In en, this message translates to:
+  /// **'Specialist Doctors'**
+  String get specialistDoctors;
+
+  /// No description provided for @services.
+  ///
+  /// In en, this message translates to:
+  /// **'Services'**
+  String get services;
+
+  /// No description provided for @normalBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get normalBooking;
+
+  /// No description provided for @emergencyBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency'**
+  String get emergencyBooking;
+
+  /// No description provided for @bookingConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking Confirmed!'**
+  String get bookingConfirmed;
+
+  /// No description provided for @tokenFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Token for:'**
+  String get tokenFor;
+
+  /// No description provided for @yourTokenIs.
+  ///
+  /// In en, this message translates to:
+  /// **'Your {type} Token Number is:'**
+  String yourTokenIs(Object type);
+
+  /// No description provided for @profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profile;
+
+  /// No description provided for @profileComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile Complete'**
+  String get profileComplete;
+
+  /// No description provided for @profileIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile Incomplete'**
+  String get profileIncomplete;
+
+  /// No description provided for @tokensBooked.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens Booked'**
+  String get tokensBooked;
+
+  /// No description provided for @uniqueId.
+  ///
+  /// In en, this message translates to:
+  /// **'Unique ID'**
+  String get uniqueId;
+
+  /// No description provided for @mobile.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile'**
+  String get mobile;
+
+  /// No description provided for @email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get email;
+
+  /// No description provided for @verified.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get verified;
+
+  /// No description provided for @unverified.
+  ///
+  /// In en, this message translates to:
+  /// **'Unverified'**
+  String get unverified;
+
+  /// No description provided for @familyMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Family Members'**
+  String get familyMembers;
+
+  /// No description provided for @ayushmanCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Ayushman Bharat Card'**
+  String get ayushmanCard;
+
+  /// No description provided for @cardNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'CARD NUMBER'**
+  String get cardNumber;
+
+  /// No description provided for @govtOfIndia.
+  ///
+  /// In en, this message translates to:
+  /// **'GOVERNMENT OF INDIA'**
+  String get govtOfIndia;
+
+  /// No description provided for @setupPinRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup PIN Required'**
+  String get setupPinRequired;
+
+  /// No description provided for @setupPinDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Please set a Wallet PIN in Settings to view your balance.'**
+  String get setupPinDesc;
+
+  /// No description provided for @setupNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup Now'**
+  String get setupNow;
+
+  /// No description provided for @enterWalletPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Wallet PIN'**
+  String get enterWalletPin;
+
+  /// No description provided for @verifyIdentity.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your identity to view balance.'**
+  String get verifyIdentity;
+
+  /// No description provided for @verify.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get verify;
+
+  /// No description provided for @membersAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} / 5 Members Added'**
+  String membersAdded(Object count);
+
+  /// No description provided for @messages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get messages;
+
+  /// No description provided for @archivedChats.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived Chats'**
+  String get archivedChats;
+
+  /// No description provided for @searchChats.
+  ///
+  /// In en, this message translates to:
+  /// **'Search hospital chats'**
+  String get searchChats;
+
+  /// No description provided for @noConversations.
+  ///
+  /// In en, this message translates to:
+  /// **'No conversations yet'**
+  String get noConversations;
+
+  /// No description provided for @noArchivedChats.
+  ///
+  /// In en, this message translates to:
+  /// **'No archived chats'**
+  String get noArchivedChats;
+
+  /// No description provided for @goBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Go back'**
+  String get goBack;
+
+  /// No description provided for @selectHospitalChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Hospital to Chat'**
+  String get selectHospitalChat;
+
+  /// No description provided for @chatBookingRequirement.
+  ///
+  /// In en, this message translates to:
+  /// **'You can only chat with hospitals where you have an active booking.'**
+  String get chatBookingRequirement;
+
+  /// No description provided for @noBookingsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No bookings found.'**
+  String get noBookingsFound;
+
+  /// No description provided for @verifiedHospital.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified Hospital'**
+  String get verifiedHospital;
+
+  /// No description provided for @archived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get archived;
+
+  /// No description provided for @describeProblem.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe your problem (Optional)'**
+  String get describeProblem;
+
+  /// No description provided for @describeProblemHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Fever since 2 days, Back pain'**
+  String get describeProblemHint;
+
+  /// No description provided for @whoIsTokenFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Who is this token for?'**
+  String get whoIsTokenFor;
+
+  /// No description provided for @bookMyself.
+  ///
+  /// In en, this message translates to:
+  /// **'Myself'**
+  String get bookMyself;
+
+  /// No description provided for @bookMyselfDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Book for your own profile'**
+  String get bookMyselfDesc;
+
+  /// No description provided for @noFamilyMembersAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'No family members added.'**
+  String get noFamilyMembersAdded;
+
+  /// No description provided for @securityAndPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'SECURITY & PRIVACY'**
+  String get securityAndPrivacy;
+
+  /// No description provided for @appPin.
+  ///
+  /// In en, this message translates to:
+  /// **'App Password (PIN)'**
+  String get appPin;
+
+  /// No description provided for @appPinDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Protect your app with a 4-digit PIN'**
+  String get appPinDesc;
+
+  /// No description provided for @walletPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet Password'**
+  String get walletPassword;
+
+  /// No description provided for @changeWalletPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Change wallet PIN'**
+  String get changeWalletPin;
+
+  /// No description provided for @setWalletPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Set wallet PIN'**
+  String get setWalletPin;
+
+  /// No description provided for @biometricDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Use fingerprint/face to sign in'**
+  String get biometricDesc;
+
+  /// No description provided for @notificationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'TokN booking alerts'**
+  String get notificationDesc;
+
+  /// No description provided for @reminderDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Get turn/time reminders'**
+  String get reminderDesc;
+
+  /// No description provided for @account.
+  ///
+  /// In en, this message translates to:
+  /// **'ACCOUNT'**
+  String get account;
+
+  /// No description provided for @updateDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Update your details'**
+  String get updateDetails;
+
+  /// No description provided for @addRemoveMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Add or remove members'**
+  String get addRemoveMembers;
+
+  /// No description provided for @support.
+  ///
+  /// In en, this message translates to:
+  /// **'SUPPORT'**
+  String get support;
+
+  /// No description provided for @getHelpTokn.
+  ///
+  /// In en, this message translates to:
+  /// **'Get help with TokN'**
+  String get getHelpTokn;
+
+  /// No description provided for @version.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get version;
+
+  /// No description provided for @completeYourProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Your Profile'**
+  String get completeYourProfile;
+
+  /// No description provided for @profileCompletionStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile is {percentage}% complete.'**
+  String profileCompletionStatus(Object percentage);
+
+  /// No description provided for @finishNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish Now'**
+  String get finishNow;
+
+  /// No description provided for @confirmPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm PIN'**
+  String get confirmPin;
+
+  /// No description provided for @setAppPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Set App PIN'**
+  String get setAppPin;
+
+  /// No description provided for @pleaseConfirmPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Please confirm your 4-digit PIN.'**
+  String get pleaseConfirmPin;
+
+  /// No description provided for @enterPinToSecure.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a 4-digit PIN to secure your {target}.'**
+  String enterPinToSecure(Object target);
+
+  /// No description provided for @pinMatchSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'{target} PIN set successfully!'**
+  String pinMatchSuccess(Object target);
+
+  /// No description provided for @app.
+  ///
+  /// In en, this message translates to:
+  /// **'App'**
+  String get app;
+
+  /// No description provided for @wallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet'**
+  String get wallet;
 }
 
 class _AppLocalizationsDelegate
@@ -548,7 +1090,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'hi'].contains(locale.languageCode);
+      <String>['en', 'hi', 'pa'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -561,6 +1103,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
       return AppLocalizationsEn();
     case 'hi':
       return AppLocalizationsHi();
+    case 'pa':
+      return AppLocalizationsPa();
   }
 
   throw FlutterError(

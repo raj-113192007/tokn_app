@@ -302,8 +302,18 @@ class _FamilyMembersPageState extends State<FamilyMembersPage> {
   }
 
   Widget _buildAddButton(BuildContext context, String text) {
+    bool isLimitReached = _members.length >= 5;
+
     return ScaleOnTap(
       onTap: () async {
+        if (isLimitReached) {
+          ToknSnackBar.show(
+            context, 
+            message: 'You can only add up to 5 family members.',
+            type: SnackBarType.error,
+          );
+          return;
+        }
         final result = await Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const AddMemberPage()),
@@ -316,31 +326,50 @@ class _FamilyMembersPageState extends State<FamilyMembersPage> {
         width: double.infinity,
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: const Color(0xFFF2F6FE).withOpacity(0.5),
+          color: isLimitReached 
+              ? Colors.grey[100] 
+              : const Color(0xFFF2F6FE).withOpacity(0.5),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: const Color(0xFF2E4C9D).withOpacity(0.2),
+            color: isLimitReached 
+                ? Colors.grey[300]! 
+                : const Color(0xFF2E4C9D).withOpacity(0.2),
           ),
         ),
         child: Column(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(
-                color: Color(0xFF2E4C9D),
+              decoration: BoxDecoration(
+                color: isLimitReached ? Colors.grey[400] : const Color(0xFF2E4C9D),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.person_add_alt_1, color: Colors.white, size: 20),
+              child: Icon(
+                isLimitReached ? Icons.block : Icons.person_add_alt_1, 
+                color: Colors.white, 
+                size: 20
+              ),
             ),
             const SizedBox(height: 12),
             Text(
-              text,
+              isLimitReached ? 'Limit Reached (5/5)' : text,
               style: GoogleFonts.poppins(
-                color: const Color(0xFF2E4C9D),
+                color: isLimitReached ? Colors.grey[600] : const Color(0xFF2E4C9D),
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),
             ),
+            if (isLimitReached)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Remove a member to add a new one',
+                  style: GoogleFonts.poppins(
+                    color: Colors.grey[400],
+                    fontSize: 11,
+                  ),
+                ),
+              ),
           ],
         ),
       ),

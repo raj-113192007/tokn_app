@@ -13,6 +13,7 @@ import 'widgets/hideable_bottom_bar.dart';
 import 'services/api_service.dart';
 import 'services/scroll_notifier.dart';
 import 'all_hospitals_page.dart';
+import 'package:tokn/l10n/app_localizations.dart';
 import 'all_categories_page.dart';
 
 import 'liked_hospitals_page.dart';
@@ -110,10 +111,27 @@ class _HomePageState extends State<HomePage> {
 
 
   Future<void> _loadUserName() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _userName = prefs.getString('user_name') ?? 'User';
-    });
+    try {
+      final profile = await SupabaseService().getProfile();
+      if (profile != null && mounted) {
+        setState(() {
+          _userName = profile['full_name'] ?? 'User';
+        });
+        // Sync to entry for offline or quick loads
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_name', _userName);
+      } else {
+        final prefs = await SharedPreferences.getInstance();
+        setState(() {
+          _userName = prefs.getString('user_name') ?? 'User';
+        });
+      }
+    } catch (e) {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        _userName = prefs.getString('user_name') ?? 'User';
+      });
+    }
   }
 
   String _getFirstName() {
@@ -220,7 +238,7 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Notifications',
+                  AppLocalizations.of(context)!.notifications,
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -230,7 +248,7 @@ class _HomePageState extends State<HomePage> {
                 TextButton(
                   onPressed: () => Navigator.pop(context),
                   child: Text(
-                    'Clear all',
+                    AppLocalizations.of(context)!.clearAll,
                     style: GoogleFonts.poppins(
                       color: const Color(0xFF1E40AF),
                     ),
@@ -246,7 +264,7 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No new notifications',
+              AppLocalizations.of(context)!.noNotifications,
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -255,7 +273,7 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'We\'ll notify you when something important arrives.',
+              AppLocalizations.of(context)!.notificationDisclaimer,
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 14,
@@ -283,7 +301,7 @@ class _HomePageState extends State<HomePage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Select City',
+                AppLocalizations.of(context)!.selectCity,
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -410,7 +428,7 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(width: 12),
               Text(
-                'Hi ${_getFirstName()}',
+                '${AppLocalizations.of(context)!.greeting} ${_getFirstName()}',
 
                 style: GoogleFonts.poppins(
                   fontSize: 20,
@@ -463,7 +481,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   child: TextField(
                     decoration: InputDecoration(
-                      hintText: 'Search by category or name',
+                      hintText: AppLocalizations.of(context)!.searchHint,
                       hintStyle: GoogleFonts.poppins(
                         color: Colors.black54,
                         fontSize: 13,
@@ -529,7 +547,7 @@ class _HomePageState extends State<HomePage> {
                           bottom: 20,
                           left: 20,
                           child: Text(
-                            'Find Best Doctors\nNear You',
+                            AppLocalizations.of(context)!.bannerTitle,
                             style: GoogleFonts.poppins(
                               color: Colors.white,
                               fontSize: 22,
@@ -544,7 +562,7 @@ class _HomePageState extends State<HomePage> {
 
                 if (!_isLoadingBookings && _upcomingBookings.isNotEmpty) ...[
                   const SizedBox(height: 25),
-                  _buildSectionHeader('Upcoming Booking'),
+                  _buildSectionHeader(AppLocalizations.of(context)!.upcomingBooking),
                   const SizedBox(height: 15),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -567,7 +585,7 @@ class _HomePageState extends State<HomePage> {
 
                 // Hospitals Section
                 _buildSectionHeader(
-                  'Hospitals',
+                  AppLocalizations.of(context)!.hospitals,
                   onMoreTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -583,7 +601,7 @@ class _HomePageState extends State<HomePage> {
                         ? Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             child: Text(
-                              'No hospitals found near you.',
+                              AppLocalizations.of(context)!.noHospitalsFound,
                               style: GoogleFonts.poppins(color: Colors.grey),
                             ),
                           )
@@ -611,7 +629,7 @@ class _HomePageState extends State<HomePage> {
 
                 // Liked Hospitals Section
                 _buildSectionHeader(
-                  'Liked Hospitals',
+                  AppLocalizations.of(context)!.likedHospitals,
                   onMoreTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -653,7 +671,7 @@ class _HomePageState extends State<HomePage> {
 
                 // Category Section
                 _buildSectionHeader(
-                  'Category',
+                  AppLocalizations.of(context)!.categories,
                   onMoreTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -681,7 +699,7 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(height: 25),
 
                 // Recently Visited Section for application homepage
-                _buildSectionHeader('Recently Visited'),
+                _buildSectionHeader(AppLocalizations.of(context)!.recentlyVisited),
                 const SizedBox(height: 15),
                 SizedBox(
                   height: 160,

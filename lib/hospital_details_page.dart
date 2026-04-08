@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'widgets/animation_utils.dart';
+import 'package:tokn/l10n/app_localizations.dart';
 import 'widgets/glass_bottom_bar.dart';
 
 import 'services/api_service.dart';
@@ -27,11 +28,14 @@ class HospitalDetailsPage extends StatefulWidget {
 class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
   bool _isLiked = false;
   bool _isLoadingLike = true;
+  List<Map<String, dynamic>> _familyMembers = [];
+  bool _isLoadingFamily = true;
 
   @override
   void initState() {
     super.initState();
     _checkIfLiked();
+    _fetchFamilyMembers();
   }
 
   Future<void> _checkIfLiked() async {
@@ -41,6 +45,20 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
         _isLiked = liked;
         _isLoadingLike = false;
       });
+    }
+  }
+
+  Future<void> _fetchFamilyMembers() async {
+    try {
+      final members = await SupabaseService().getFamilyMembers();
+      if (mounted) {
+        setState(() {
+          _familyMembers = members;
+          _isLoadingFamily = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingFamily = false);
     }
   }
 
@@ -69,7 +87,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
           child: const Icon(Icons.arrow_back, color: Colors.black),
         ),
         title: Text(
-          'Hospital Details',
+          AppLocalizations.of(context)!.hospitalDetails,
           style: GoogleFonts.poppins(
             color: Colors.black,
             fontWeight: FontWeight.bold,
@@ -134,7 +152,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'ONLINE',
+                          AppLocalizations.of(context)!.online,
                           style: GoogleFonts.poppins(
                             color: Colors.white,
                             fontSize: 12,
@@ -268,7 +286,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                                 const Icon(Icons.directions_outlined, color: Colors.white, size: 20),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Directions',
+                                  AppLocalizations.of(context)!.directions,
                                   style: GoogleFonts.poppins(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -297,7 +315,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        'About Hospital Services',
+                        AppLocalizations.of(context)!.aboutHospital,
                         style: GoogleFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -319,7 +337,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
 
                   // Specialties
                   Text(
-                    'Specialties',
+                    AppLocalizations.of(context)!.specialties,
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -342,7 +360,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
 
                   // Specialist Doctors
                   Text(
-                    'Specialist Doctors',
+                    AppLocalizations.of(context)!.specialistDoctors,
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -429,10 +447,10 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
               Expanded(
                 child: _buildBookingTypeButton(
                   context,
-                  label: 'Normal',
+                  label: AppLocalizations.of(context)!.normalBooking,
                   price: '₹19',
                   color: const Color(0xFF2E4C9D),
-                  onTap: () => _handleBooking(context, 'Normal', 19.0),
+                  onTap: () => _showPatientSelector(context, 'Normal', 19.0),
                 ),
               ),
               const SizedBox(width: 12),
@@ -444,7 +462,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                   fullLabel: 'Emergency',
                   price: '₹49',
                   color: Colors.redAccent,
-                  onTap: () => _handleBooking(context, 'Emergency', 49.0),
+                  onTap: () => _showPatientSelector(context, 'Emergency', 49.0),
                 ),
               ),
             ],
@@ -501,7 +519,123 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
     );
   }
 
-  Future<void> _handleBooking(BuildContext context, String type, double price) async {
+  final _problemController = TextEditingController();
+
+  void _showPatientSelector(BuildContext context, String type, double price) {
+    _problemController.clear();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                AppLocalizations.of(context)!.selectPatient,
+                style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              
+              // Problem Description Field
+              Text(
+                AppLocalizations.of(context)!.describeProblem,
+                style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey[700]),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _problemController,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  hintText: AppLocalizations.of(context)!.describeProblemHint,
+                  hintStyle: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[400]),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              Text(
+                AppLocalizations.of(context)!.whoIsTokenFor,
+                style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey[700]),
+              ),
+              const SizedBox(height: 12),
+              // Myself
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: const Color(0xFF2E4C9D).withOpacity(0.1), shape: BoxShape.circle),
+                  child: const Icon(Icons.person_outline, color: Color(0xFF2E4C9D)),
+                ),
+                title: Text(AppLocalizations.of(context)!.bookMyself, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                subtitle: Text(AppLocalizations.of(context)!.bookMyselfDesc, style: GoogleFonts.poppins(fontSize: 12)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  _handleBooking(context, type, price, 'Myself', _problemController.text);
+                },
+              ),
+              if (_familyMembers.isNotEmpty) ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Divider(),
+                ),
+                ..._familyMembers.map((member) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), shape: BoxShape.circle),
+                      child: const Icon(Icons.people_outline, color: Colors.orange),
+                    ),
+                    title: Text(member['full_name'] ?? 'Family Member', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                    subtitle: Text(member['relationship'] ?? 'Member', style: GoogleFonts.poppins(fontSize: 12)),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _handleBooking(context, type, price, member['full_name'], _problemController.text);
+                    },
+                  ),
+                )).toList(),
+              ] else if (!_isLoadingFamily) 
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Center(
+                    child: Text(AppLocalizations.of(context)!.noFamilyMembersAdded, style: GoogleFonts.poppins(color: Colors.grey, fontSize: 13)),
+                  ),
+                ),
+              const SizedBox(height: 30),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleBooking(BuildContext context, String type, double price, String patientName, String description) async {
     final now = DateTime.now();
     final dateStr = "${now.year}-${now.month}-${now.day}";
     final timeStr = "${now.hour}:${now.minute}";
@@ -518,6 +652,8 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
       time: timeStr,
       type: type,
       price: price,
+      patientName: patientName,
+      description: description,
     );
 
     if (context.mounted) {
@@ -529,11 +665,17 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
           context: context,
           builder: (context) => AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Text('Booking Confirmed!', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+            title: Text(AppLocalizations.of(context)!.bookingConfirmed, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Your $type Token Number is:', style: GoogleFonts.poppins()),
+                Text('${AppLocalizations.of(context)!.tokenFor} $patientName', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: const Color(0xFF2E4C9D))),
+                if (description.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text('Problem: $description', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[700], fontStyle: FontStyle.italic)),
+                ],
+                const SizedBox(height: 16),
+                Text(AppLocalizations.of(context)!.yourTokenIs(type), style: GoogleFonts.poppins()),
                 const SizedBox(height: 10),
                 Text(
                   token,

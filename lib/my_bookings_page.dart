@@ -97,7 +97,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
       }
       await HomeWidget.updateWidget(
         name: 'TokenWidgetProvider',
-        androidName: 'TokenWidgetProvider',
+        androidName: 'com.example.tokn.TokenWidgetProvider',
       );
 
     } catch (e) {

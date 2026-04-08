@@ -12,6 +12,7 @@ import 'add_member_page.dart';
 import 'package:provider/provider.dart';
 import 'services/security_service.dart';
 import 'wallet_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'services/supabase_service.dart';
 import 'dart:io';
 import 'widgets/tokn_snackbar.dart';
@@ -36,11 +37,14 @@ class _ProfilePageState extends State<ProfilePage> {
   String _bloodGroup = 'Not Set';
   String _customId = 'Pending';
   String _tokensBooked = '0';
+  int _familyMemberCount = 0;
+  bool _isEmailVerified = false;
 
   late final ScrollController _profileScrollController;
   bool _isBalanceVisible = false;
   String? _avatarUrl;
   bool _isUploading = false;
+  bool _isProfileComplete = false;
 
 
 
@@ -62,15 +66,25 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadUserData() async {
     final profile = await SupabaseService().getProfile();
+    final members = await SupabaseService().getFamilyMembers();
+    final user = SupabaseService.client.auth.currentUser;
+
     if (profile != null && mounted) {
       setState(() {
         _userName = profile['full_name'] ?? 'User';
         _userEmail = profile['email'] ?? 'Update email in settings';
         _userPhone = profile['phone_number'] ?? 'Update phone in settings';
         _avatarUrl = profile['avatar_url'];
-        _age = profile['age'] != null ? '${profile['age']} Years' : 'Not Set';
+        _age = profile['age'] != null ? '${profile['age']} ${AppLocalizations.of(context)!.years}' : 'Not Set';
         _bloodGroup = profile['blood_group'] ?? 'Not Set';
         _customId = profile['custom_id'] ?? 'Pending';
+        _familyMemberCount = members.length;
+        _isEmailVerified = user?.emailConfirmedAt != null;
+        
+        // Comprehensive check for profile completion
+        _isProfileComplete = (profile['full_name'] != null && profile['full_name'] != 'User') &&
+                             (profile['age'] != null) &&
+                             (profile['blood_group'] != null);
         // You could query tokens_booked from a separate table if needed
       });
     } else {
@@ -79,6 +93,8 @@ class _ProfilePageState extends State<ProfilePage> {
         _userName = prefs.getString('user_name') ?? 'User';
         _userEmail = prefs.getString('user_email') ?? 'Update email in settings';
         _userPhone = prefs.getString('user_phone') ?? 'Update phone in settings';
+        _familyMemberCount = members.length;
+        _isEmailVerified = user?.emailConfirmedAt != null;
       });
     }
   }
@@ -163,7 +179,7 @@ class _ProfilePageState extends State<ProfilePage> {
         automaticallyImplyLeading: false,
 
         title: Text(
-          'Profile',
+          AppLocalizations.of(context)!.profile,
           style: GoogleFonts.poppins(
             color: const Color(0xFF2E4C9D),
             fontWeight: FontWeight.bold,
@@ -283,24 +299,17 @@ class _ProfilePageState extends State<ProfilePage> {
                     color: Colors.black,
                   ),
                 ),
-                Text(
-                  _userEmail,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
                 const SizedBox(height: 12),
                 // Profile Completion Badge
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 6),
                   decoration: BoxDecoration(
-                    color: (_avatarUrl != null && _userName != 'User') 
+                    color: _isProfileComplete 
                         ? Colors.green.withOpacity(0.12) 
                         : Colors.redAccent.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: (_avatarUrl != null && _userName != 'User') 
+                      color: _isProfileComplete 
                           ? Colors.green.withOpacity(0.3) 
                           : Colors.redAccent.withOpacity(0.3),
                     ),
@@ -309,17 +318,17 @@ class _ProfilePageState extends State<ProfilePage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        (_avatarUrl != null && _userName != 'User') ? Icons.check_circle_outline : Icons.error_outline, 
-                        color: (_avatarUrl != null && _userName != 'User') ? Colors.green : Colors.redAccent, 
+                        _isProfileComplete ? Icons.check_circle_outline : Icons.error_outline, 
+                        color: _isProfileComplete ? Colors.green : Colors.redAccent, 
                         size: 16
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        (_avatarUrl != null && _userName != 'User') ? 'Profile Complete' : 'Profile Incomplete',
+                        _isProfileComplete ? AppLocalizations.of(context)!.profileComplete : AppLocalizations.of(context)!.profileIncomplete,
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: (_avatarUrl != null && _userName != 'User') ? Colors.green : Colors.redAccent,
+                          color: _isProfileComplete ? Colors.green : Colors.redAccent,
                         ),
                       ),
                     ],
@@ -327,66 +336,84 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
 
                 const SizedBox(height: 25),
-                // Add Family Member Button
-                ScaleOnTap(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const AddMemberPage()),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2E4C9D),
-                      borderRadius: BorderRadius.circular(25),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF2E4C9D).withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        )
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.add, color: Colors.white, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          AppLocalizations.of(context)!.addFamilyMemberTitle,
-                          style: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
+                // Add Family Member Button (only if count < 5)
+                if (_familyMemberCount < 5)
+                  ScaleOnTap(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AddMemberPage()),
+                      ).then((_) => _loadUserData());
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2E4C9D),
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF2E4C9D).withOpacity(0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.add, color: Colors.white, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            AppLocalizations.of(context)!.addFamilyMemberTitle,
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
                 const SizedBox(height: 35),
                 // Info Grid
-                Row(
-                  children: [
-                    Expanded(child: _buildInfoCard('Age', _age)),
-                    const SizedBox(width: 15),
-                    Expanded(child: _buildInfoCard('Blood Group', _bloodGroup, valueColor: Colors.redAccent)),
-                  ],
+                  Row(
+                    children: [
+                      Expanded(child: _buildInfoCard(AppLocalizations.of(context)!.age, _age)),
+                      const SizedBox(width: 15),
+                      Expanded(child: _buildInfoCard(AppLocalizations.of(context)!.bloodGroup, _bloodGroup, valueColor: Colors.redAccent)),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                  Row(
+                    children: [
+                      Expanded(child: _buildInfoCard(AppLocalizations.of(context)!.tokensBooked, _tokensBooked)),
+                      const SizedBox(width: 15),
+                      Expanded(child: _buildInfoCard(AppLocalizations.of(context)!.uniqueId, _customId, isCompact: true)),
+                    ],
+                  ),
+                const SizedBox(height: 15),
+                // Contact Section: Mobile and Email
+                _buildContactCard(Icons.phone_android_outlined, AppLocalizations.of(context)!.mobile, _userPhone),
+                const SizedBox(height: 15),
+                _buildContactCard(
+                  Icons.email_outlined, 
+                  AppLocalizations.of(context)!.email, 
+                  _userEmail, 
+                  isEmail: true,
+                  isVerified: _isEmailVerified,
+                  onVerify: () {
+                    SupabaseService().resendOTP(email: _userEmail, type: OtpType.signup);
+                    ToknSnackBar.show(context, message: 'Verification link resent!', type: SnackBarType.success);
+                  },
                 ),
                 const SizedBox(height: 15),
-                Row(
-                  children: [
-                    Expanded(child: _buildInfoCard('Tokens Booked', _tokensBooked)),
-                    const SizedBox(width: 15),
-                    Expanded(child: _buildInfoCard('Unique ID', _customId, isCompact: true)),
-                  ],
+                _buildContactCard(
+                  Icons.people_outline, 
+                  AppLocalizations.of(context)!.familyMembers, 
+                  AppLocalizations.of(context)!.membersAdded('$_familyMemberCount'),
                 ),
-                const SizedBox(height: 15),
-                // Mobile Section
-                _buildContactCard(Icons.phone_android_outlined, 'Mobile', _userPhone),
                 const SizedBox(height: 25),
-                // Hospital Wallet Section
                 _buildWalletCard(context),
                 const SizedBox(height: 25),
                 // Ayushman Card
@@ -435,7 +462,14 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildContactCard(IconData icon, String label, String value) {
+  Widget _buildContactCard(
+    IconData icon, 
+    String label, 
+    String value, {
+    bool isEmail = false, 
+    bool isVerified = false,
+    VoidCallback? onVerify,
+  }) {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
@@ -460,23 +494,63 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Icon(icon, color: const Color(0xFF2E4C9D), size: 22),
           ),
           const SizedBox(width: 15),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: GoogleFonts.poppins(color: Colors.grey[500], fontSize: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      label,
+                      style: GoogleFonts.poppins(color: Colors.grey[500], fontSize: 12),
+                    ),
+                    if (isEmail) ...[
+                      const SizedBox(width: 8),
+                      Icon(
+                        isVerified ? Icons.verified : Icons.error_outline,
+                        color: isVerified ? Colors.blue : Colors.orange,
+                        size: 14,
+                      ),
+                      Text(
+                        isVerified ? AppLocalizations.of(context)!.verified : AppLocalizations.of(context)!.unverified,
+                        style: GoogleFonts.poppins(
+                          color: isVerified ? Colors.blue : Colors.orange,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ]
+                  ],
+                ),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    color: Colors.black,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          if (isEmail && !isVerified)
+            TextButton(
+              onPressed: onVerify,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                backgroundColor: const Color(0xFF2E4C9D).withOpacity(0.1),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              Text(
-                value,
+              child: Text(
+                'Verify',
                 style: GoogleFonts.poppins(
-                  color: Colors.black,
-                  fontSize: 15,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
+                  color: const Color(0xFF2E4C9D),
                 ),
               ),
-            ],
-          ),
+            ),
         ],
       ),
     );
@@ -510,7 +584,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               const SizedBox(width: 12),
               Text(
-                'Ayushman Bharat Card',
+                AppLocalizations.of(context)!.ayushmanCard,
                 style: GoogleFonts.poppins(
                   color: const Color(0xFF2E7D32),
                   fontWeight: FontWeight.bold,
@@ -521,7 +595,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           const SizedBox(height: 25),
           Text(
-            'CARD NUMBER',
+            AppLocalizations.of(context)!.cardNumber,
             style: GoogleFonts.poppins(color: Colors.green[800], fontSize: 10, letterSpacing: 1),
           ),
           const SizedBox(height: 5),
@@ -539,7 +613,7 @@ class _ProfilePageState extends State<ProfilePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'GOVERNMENT OF INDIA',
+                AppLocalizations.of(context)!.govtOfIndia,
                 style: GoogleFonts.poppins(color: Colors.green[800], fontSize: 10, fontWeight: FontWeight.bold),
               ),
               const Icon(Icons.qr_code_2, color: Color(0xFF2E7D32), size: 30),
@@ -589,12 +663,12 @@ class _ProfilePageState extends State<ProfilePage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Enter Wallet PIN', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        title: Text(AppLocalizations.of(context)!.enterWalletPin, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Verify your identity to view balance.', style: GoogleFonts.poppins(fontSize: 13)),
+            Text(AppLocalizations.of(context)!.verifyIdentity, style: GoogleFonts.poppins(fontSize: 13)),
             const SizedBox(height: 16),
             TextField(
               controller: pinController,

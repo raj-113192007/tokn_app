@@ -4,6 +4,7 @@ import 'package:tokn/l10n/app_localizations.dart';
 import 'widgets/animation_utils.dart';
 import 'widgets/tokn_snackbar.dart';
 import 'services/supabase_service.dart';
+import 'package:image_picker/image_picker.dart';
 
 
 class EditProfilePage extends StatefulWidget {
@@ -14,16 +15,79 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  final TextEditingController _nameController = TextEditingController(text: 'John Doe');
-  final TextEditingController _emailController = TextEditingController(text: 'john.doe@email.com');
-  final TextEditingController _phoneController = TextEditingController(text: '9876543210');
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emergencyContactController = TextEditingController();
+  
   bool _isLoading = false;
+  bool _isInitLoading = true;
+  String? _avatarUrl;
+  final ImagePicker _picker = ImagePicker();
 
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfileData();
+  }
 
+  Future<void> _fetchProfileData() async {
+    try {
+      final profile = await SupabaseService().getProfile();
+      if (profile != null) {
+        setState(() {
+          _nameController.text = profile['full_name'] ?? '';
+          _emailController.text = profile['email'] ?? '';
+          _phoneController.text = (profile['phone_number'] ?? '').replaceAll('+91', '');
+          _emergencyContactController.text = profile['emergency_contact'] ?? '';
+          _avatarUrl = profile['avatar_url'];
+          _isInitLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ToknSnackBar.show(context, message: 'Failed to load profile');
+        setState(() => _isInitLoading = false);
+      }
+    }
+  }
+
+  Future<void> _pickAndUploadImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+      );
+
+      if (image != null) {
+        setState(() => _isLoading = true);
+        final url = await SupabaseService().uploadProfilePhoto(image.path);
+        if (url != null) {
+          setState(() {
+            _avatarUrl = url;
+            _isLoading = false;
+          });
+          if (mounted) {
+            ToknSnackBar.show(context, message: 'Photo updated successfully', type: SnackBarType.success);
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ToknSnackBar.show(context, message: 'Failed to upload photo');
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isInitLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF2E4C9D))),
+      );
+    }
+
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -88,17 +152,30 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   offset: const Offset(0, 5),
                 ),
               ],
-              image: const DecorationImage(
-                image: NetworkImage('https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=400'),
+              image: DecorationImage(
+                image: _avatarUrl != null && _avatarUrl!.isNotEmpty
+                    ? NetworkImage(_avatarUrl!)
+                    : const NetworkImage('https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=400'),
                 fit: BoxFit.cover,
               ),
             ),
+            child: _isLoading 
+              ? Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.black26,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  ),
+                )
+              : null,
           ),
           Positioned(
             bottom: 0,
             right: 0,
             child: ScaleOnTap(
-              onTap: () {},
+              onTap: _isLoading ? null : _pickAndUploadImage,
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -192,18 +269,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
       onTap: _isLoading ? null : () async {
         setState(() => _isLoading = true);
         try {
+          final phone = _phoneController.text.trim();
+          String formattedPhone = phone;
+          if (phone.isNotEmpty && !phone.startsWith('+')) {
+            formattedPhone = '+91$phone';
+          }
+
           final data = {
-            if (_nameController.text.isNotEmpty) 'full_name': _nameController.text.trim(),
-            if (_phoneController.text.isNotEmpty) 'phone_number': _phoneController.text.trim(),
-            if (_emergencyContactController.text.isNotEmpty) 'emergency_contact': _emergencyContactController.text.trim(),
-            // email is usually managed by Supabase auth directly, so changing the user's email requires an auth update
-            // However, updating the profile email is possible here
-            if (_emailController.text.isNotEmpty) 'email': _emailController.text.trim().toLowerCase(),
+            'full_name': _nameController.text.trim(),
+            'phone_number': formattedPhone,
+            'emergency_contact': _emergencyContactController.text.trim(),
+            'email': _emailController.text.trim().toLowerCase(),
+            'avatar_url': _avatarUrl,
           };
 
-          if (data.isNotEmpty) {
-            await SupabaseService().updateProfileDetails(data);
-          }
+          await SupabaseService().updateProfileDetails(data);
+          
           if (mounted) {
             ToknSnackBar.show(context, message: 'Profile updated successfully!', type: SnackBarType.success);
             Navigator.pop(context);

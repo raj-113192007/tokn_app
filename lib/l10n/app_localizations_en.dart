@@ -24,6 +24,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hindi => 'Hindi';
 
   @override
+  String get punjabi => 'Punjabi';
+
+  @override
   String get biometricLogin => 'Biometric Login';
 
   @override
@@ -190,6 +193,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get select => 'Select';
 
   @override
+  String get selectPatient => 'Select Patient';
+
+  @override
   String get type => 'Type';
 
   @override
@@ -234,4 +240,281 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cancel => 'Cancel';
+
+  @override
+  String get directions => 'Directions';
+
+  @override
+  String get greeting => 'Hi';
+
+  @override
+  String get searchHint => 'Search by category or name';
+
+  @override
+  String get selectCity => 'Select City';
+
+  @override
+  String get bannerTitle => 'Find Best Doctors\nNear You';
+
+  @override
+  String get upcomingBooking => 'Upcoming Booking';
+
+  @override
+  String get hospitals => 'Hospitals';
+
+  @override
+  String get likedHospitals => 'Liked Hospitals';
+
+  @override
+  String get noLikedHospitals => 'No liked hospitals yet.';
+
+  @override
+  String get categories => 'Category';
+
+  @override
+  String get recentlyVisited => 'Recently Visited';
+
+  @override
+  String get noHospitalsFound => 'No hospitals found near you.';
+
+  @override
+  String get clearAll => 'Clear all';
+
+  @override
+  String get noNotifications => 'No new notifications';
+
+  @override
+  String get notificationDisclaimer =>
+      'We\'ll notify you when something important arrives.';
+
+  @override
+  String get hospitalDetails => 'Hospital Details';
+
+  @override
+  String get online => 'ONLINE';
+
+  @override
+  String get aboutHospital => 'About Hospital Services';
+
+  @override
+  String get specialties => 'Specialties';
+
+  @override
+  String get specialistDoctors => 'Specialist Doctors';
+
+  @override
+  String get services => 'Services';
+
+  @override
+  String get normalBooking => 'Normal';
+
+  @override
+  String get emergencyBooking => 'Emergency';
+
+  @override
+  String get bookingConfirmed => 'Booking Confirmed!';
+
+  @override
+  String get tokenFor => 'Token for:';
+
+  @override
+  String yourTokenIs(Object type) {
+    return 'Your $type Token Number is:';
+  }
+
+  @override
+  String get profile => 'Profile';
+
+  @override
+  String get profileComplete => 'Profile Complete';
+
+  @override
+  String get profileIncomplete => 'Profile Incomplete';
+
+  @override
+  String get tokensBooked => 'Tokens Booked';
+
+  @override
+  String get uniqueId => 'Unique ID';
+
+  @override
+  String get mobile => 'Mobile';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get verified => 'Verified';
+
+  @override
+  String get unverified => 'Unverified';
+
+  @override
+  String get familyMembers => 'Family Members';
+
+  @override
+  String get ayushmanCard => 'Ayushman Bharat Card';
+
+  @override
+  String get cardNumber => 'CARD NUMBER';
+
+  @override
+  String get govtOfIndia => 'GOVERNMENT OF INDIA';
+
+  @override
+  String get setupPinRequired => 'Setup PIN Required';
+
+  @override
+  String get setupPinDesc =>
+      'Please set a Wallet PIN in Settings to view your balance.';
+
+  @override
+  String get setupNow => 'Setup Now';
+
+  @override
+  String get enterWalletPin => 'Enter Wallet PIN';
+
+  @override
+  String get verifyIdentity => 'Verify your identity to view balance.';
+
+  @override
+  String get verify => 'Verify';
+
+  @override
+  String membersAdded(Object count) {
+    return '$count / 5 Members Added';
+  }
+
+  @override
+  String get messages => 'Messages';
+
+  @override
+  String get archivedChats => 'Archived Chats';
+
+  @override
+  String get searchChats => 'Search hospital chats';
+
+  @override
+  String get noConversations => 'No conversations yet';
+
+  @override
+  String get noArchivedChats => 'No archived chats';
+
+  @override
+  String get goBack => 'Go back';
+
+  @override
+  String get selectHospitalChat => 'Select Hospital to Chat';
+
+  @override
+  String get chatBookingRequirement =>
+      'You can only chat with hospitals where you have an active booking.';
+
+  @override
+  String get noBookingsFound => 'No bookings found.';
+
+  @override
+  String get verifiedHospital => 'Verified Hospital';
+
+  @override
+  String get archived => 'Archived';
+
+  @override
+  String get describeProblem => 'Describe your problem (Optional)';
+
+  @override
+  String get describeProblemHint => 'e.g. Fever since 2 days, Back pain';
+
+  @override
+  String get whoIsTokenFor => 'Who is this token for?';
+
+  @override
+  String get bookMyself => 'Myself';
+
+  @override
+  String get bookMyselfDesc => 'Book for your own profile';
+
+  @override
+  String get noFamilyMembersAdded => 'No family members added.';
+
+  @override
+  String get securityAndPrivacy => 'SECURITY & PRIVACY';
+
+  @override
+  String get appPin => 'App Password (PIN)';
+
+  @override
+  String get appPinDesc => 'Protect your app with a 4-digit PIN';
+
+  @override
+  String get walletPassword => 'Wallet Password';
+
+  @override
+  String get changeWalletPin => 'Change wallet PIN';
+
+  @override
+  String get setWalletPin => 'Set wallet PIN';
+
+  @override
+  String get biometricDesc => 'Use fingerprint/face to sign in';
+
+  @override
+  String get notificationDesc => 'TokN booking alerts';
+
+  @override
+  String get reminderDesc => 'Get turn/time reminders';
+
+  @override
+  String get account => 'ACCOUNT';
+
+  @override
+  String get updateDetails => 'Update your details';
+
+  @override
+  String get addRemoveMembers => 'Add or remove members';
+
+  @override
+  String get support => 'SUPPORT';
+
+  @override
+  String get getHelpTokn => 'Get help with TokN';
+
+  @override
+  String get version => 'Version';
+
+  @override
+  String get completeYourProfile => 'Complete Your Profile';
+
+  @override
+  String profileCompletionStatus(Object percentage) {
+    return 'Your profile is $percentage% complete.';
+  }
+
+  @override
+  String get finishNow => 'Finish Now';
+
+  @override
+  String get confirmPin => 'Confirm PIN';
+
+  @override
+  String get setAppPin => 'Set App PIN';
+
+  @override
+  String get pleaseConfirmPin => 'Please confirm your 4-digit PIN.';
+
+  @override
+  String enterPinToSecure(Object target) {
+    return 'Enter a 4-digit PIN to secure your $target.';
+  }
+
+  @override
+  String pinMatchSuccess(Object target) {
+    return '$target PIN set successfully!';
+  }
+
+  @override
+  String get app => 'App';
+
+  @override
+  String get wallet => 'Wallet';
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tokn/l10n/app_localizations.dart';
 
 import 'package:provider/provider.dart';
@@ -33,6 +34,8 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _turnOnReminders = true;
   int _aboutClickCount = 0;
   String? _fullName;
+  int _profilePercentage = 0;
+  bool _isProfileComplete = false;
 
   @override
   void initState() {
@@ -45,6 +48,18 @@ class _SettingsPageState extends State<SettingsPage> {
     if (profile != null && mounted) {
       setState(() {
         _fullName = profile['full_name'];
+        
+        // Calculate completion percentage
+        int completedFields = 0;
+        int totalFields = 4; // Name, Age, BloodGroup, Avatar
+        
+        if (profile['full_name'] != null && profile['full_name'] != 'User') completedFields++;
+        if (profile['age'] != null) completedFields++;
+        if (profile['blood_group'] != null) completedFields++;
+        if (profile['avatar_url'] != null) completedFields++;
+        
+        _profilePercentage = ((completedFields / totalFields) * 100).toInt();
+        _isProfileComplete = _profilePercentage == 100;
       });
     }
   }
@@ -92,10 +107,12 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
             const SizedBox(height: 24),
-            _buildCompleteProfileCard(),
-            const SizedBox(height: 18),
+            if (!_isProfileComplete) ...[
+              _buildCompleteProfileCard(),
+              const SizedBox(height: 18),
+            ],
 
-            _buildSectionHeader('SECURITY & PRIVACY'),
+            _buildSectionHeader(AppLocalizations.of(context)!.securityAndPrivacy),
             _buildTile(
               icon: Icons.language,
               title: AppLocalizations.of(context)!.language,
@@ -104,8 +121,8 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             _buildSwitchTile(
               icon: Icons.lock_outline,
-              title: 'App Password (PIN)',
-              subtitle: 'Protect your app with a 4-digit PIN',
+              title: AppLocalizations.of(context)!.appPin,
+              subtitle: AppLocalizations.of(context)!.appPinDesc,
               value: securityProvider.appPasswordEnabled,
               onChanged: (v) {
                 if (v) {
@@ -118,8 +135,8 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             _buildTile(
               icon: Icons.wallet_outlined,
-              title: 'Wallet Password',
-              subtitle: securityProvider.walletPinEnabled ? 'Change wallet PIN' : 'Set wallet PIN',
+              title: AppLocalizations.of(context)!.walletPassword,
+              subtitle: securityProvider.walletPinEnabled ? AppLocalizations.of(context)!.changeWalletPin : AppLocalizations.of(context)!.setWalletPin,
               onTap: () => _showSetPinGenericDialog(context, securityProvider, isWallet: true),
             ),
 
@@ -128,7 +145,7 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildSwitchTile(
               icon: Icons.fingerprint,
               title: AppLocalizations.of(context)!.biometricLogin,
-              subtitle: 'Use fingerprint/face to sign in',
+              subtitle: AppLocalizations.of(context)!.biometricDesc,
               value: securityProvider.biometricEnabled,
               onChanged: (v) async {
                 if (v) {
@@ -144,25 +161,25 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildSwitchTile(
               icon: Icons.notifications_none,
               title: AppLocalizations.of(context)!.notifications,
-              subtitle: 'TokN booking alerts',
+              subtitle: AppLocalizations.of(context)!.notificationDesc,
               value: _pushNotificationsEnabled,
               onChanged: (v) => setState(() => _pushNotificationsEnabled = v),
             ),
             _buildSwitchTile(
               icon: Icons.timer_outlined,
               title: AppLocalizations.of(context)!.reminders,
-              subtitle: 'Get turn/time reminders',
+              subtitle: AppLocalizations.of(context)!.reminderDesc,
               value: _turnOnReminders,
               onChanged: (v) => setState(() => _turnOnReminders = v),
             ),
 
 
             const SizedBox(height: 16),
-            _buildSectionHeader('ACCOUNT'),
+            _buildSectionHeader(AppLocalizations.of(context)!.account),
             _buildTile(
               icon: Icons.edit_note_outlined,
               title: AppLocalizations.of(context)!.editProfile,
-              subtitle: 'Update your details',
+              subtitle: AppLocalizations.of(context)!.updateDetails,
               onTap: () {
                 Navigator.push(
                   context,
@@ -173,7 +190,7 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildTile(
               icon: Icons.people_alt_outlined,
               title: AppLocalizations.of(context)!.manageFamily,
-              subtitle: 'Add or remove members',
+              subtitle: AppLocalizations.of(context)!.addRemoveMembers,
               onTap: () {
                 Navigator.push(
                   context,
@@ -183,11 +200,11 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
 
             const SizedBox(height: 16),
-            _buildSectionHeader('SUPPORT'),
+            _buildSectionHeader(AppLocalizations.of(context)!.support),
             _buildTile(
               icon: Icons.help_outline,
               title: AppLocalizations.of(context)!.helpCenter,
-              subtitle: 'Get help with TokN',
+              subtitle: AppLocalizations.of(context)!.getHelpTokn,
               onTap: () {
                 Navigator.push(
                   context,
@@ -198,7 +215,7 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildTile(
               icon: Icons.info_outline,
               title: AppLocalizations.of(context)!.aboutTokn,
-              subtitle: 'Version 1.0.0',
+              subtitle: '${AppLocalizations.of(context)!.version} 1.0.0',
               onTap: () {
                 setState(() {
                   _aboutClickCount++;
@@ -380,14 +397,14 @@ class _SettingsPageState extends State<SettingsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Complete Your Profile',
+                  AppLocalizations.of(context)!.completeYourProfile,
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Your profile is ${'35'.toString()}% complete.',
+                  AppLocalizations.of(context)!.profileCompletionStatus(_profilePercentage.toString()),
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: Colors.grey[600],
@@ -411,7 +428,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
                       ),
                       child: Text(
-                        'Finish Now',
+                        AppLocalizations.of(context)!.finishNow,
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w700,
                           color: Colors.redAccent,
@@ -641,6 +658,7 @@ class _SettingsPageState extends State<SettingsPage> {
             children: [
               _buildLanguageOption(context, AppLocalizations.of(context)!.english, 'en'),
               _buildLanguageOption(context, AppLocalizations.of(context)!.hindi, 'hi'),
+              _buildLanguageOption(context, AppLocalizations.of(context)!.punjabi, 'pa'),
             ],
           ),
         );
@@ -674,7 +692,7 @@ class _SettingsPageState extends State<SettingsPage> {
         builder: (context, setDialogState) {
           return AlertDialog(
             title: Text(
-              isConfirming ? 'Confirm PIN' : (isWallet ? 'Set Wallet PIN' : 'Set App PIN'),
+              isConfirming ? AppLocalizations.of(context)!.confirmPin : (isWallet ? AppLocalizations.of(context)!.setWalletPin : AppLocalizations.of(context)!.setAppPin),
               style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
             ),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -682,7 +700,7 @@ class _SettingsPageState extends State<SettingsPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  isConfirming ? 'Please confirm your 4-digit PIN.' : 'Enter a 4-digit PIN to secure your ${isWallet ? 'Wallet' : 'App'}.',
+                  isConfirming ? AppLocalizations.of(context)!.pleaseConfirmPin : AppLocalizations.of(context)!.enterPinToSecure(isWallet ? AppLocalizations.of(context)!.wallet : AppLocalizations.of(context)!.app),
                   style: GoogleFonts.poppins(fontSize: 13),
                 ),
                 const SizedBox(height: 16),
@@ -714,8 +732,8 @@ class _SettingsPageState extends State<SettingsPage> {
                           } else {
                             securityProvider.setAppPasswordEnabled(true, pin: val);
                           }
-                          Navigator.pop(context);
-                          _showSuccessPopup(context, '${isWallet ? 'Wallet' : 'App'} PIN set successfully!');
+                           Navigator.pop(context);
+                          _showSuccessPopup(context, AppLocalizations.of(context)!.pinMatchSuccess(isWallet ? AppLocalizations.of(context)!.wallet : AppLocalizations.of(context)!.app));
                         } else {
                           // Mismatch
                           pinController.clear();
@@ -735,7 +753,7 @@ class _SettingsPageState extends State<SettingsPage> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('Cancel', style: GoogleFonts.poppins(color: Colors.grey)),
+                child: Text(AppLocalizations.of(context)!.cancel, style: GoogleFonts.poppins(color: Colors.grey)),
               ),
             ],
           );

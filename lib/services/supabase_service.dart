@@ -34,6 +34,14 @@ class SupabaseService {
         .select()
         .eq('id', user.id)
         .single();
+    
+    // Auto-generate custom_id if missing
+    if (response != null && (response['custom_id'] == null || response['custom_id'] == 'Pending')) {
+      final customId = 'usr${Random().nextInt(900000) + 100000}';
+      await client.from('profiles').update({'custom_id': customId}).eq('id', user.id);
+      response['custom_id'] = customId;
+    }
+    
     return response;
   }
 
@@ -54,6 +62,8 @@ class SupabaseService {
     required String doctorId,
     required String hospitalId,
     required int tokenNumber,
+    String? patientName,
+    String? description,
   }) async {
     final user = client.auth.currentUser;
     if (user == null) throw Exception("User not logged in");
@@ -63,6 +73,8 @@ class SupabaseService {
       'doctor_id': doctorId,
       'hospital_id': hospitalId,
       'token_number': tokenNumber,
+      'patient_name': patientName ?? 'You',
+      'problem_description': description ?? '',
       'status': 'pending',
     });
   }

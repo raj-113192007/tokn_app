@@ -236,6 +236,8 @@ class ApiService {
     required String time,
     String type = 'Normal',
     double price = 19.0,
+    String? patientName,
+    String? description,
   }) async {
     await Future.delayed(const Duration(seconds: 1));
     return {
@@ -247,6 +249,8 @@ class ApiService {
         'booking_time': time,
         'booking_type': type,
         'booking_price': price,
+        'patient_name': patientName ?? 'You',
+        'problem_description': description ?? '',
         'status': 'Pending'
       }
     };
@@ -267,6 +271,7 @@ class ApiService {
           },
           'booking_date': '2026-12-01',
           'booking_time': '10:00 AM',
+          'token_number': '48',
           'status': 'Pending'
         }
       ]

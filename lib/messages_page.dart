@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'widgets/animation_utils.dart';
+import 'package:tokn/l10n/app_localizations.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'services/scroll_notifier.dart';
 import 'services/api_service.dart';
@@ -22,6 +23,8 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
   late TabController _tabController;
   late final ScrollController _messagesScrollController;
   List<Map<String, dynamic>> _visibleChats = [];
+  List<Map<String, dynamic>> _archivedChats = [];
+  bool _showingArchived = false;
   bool _isFetchingBookings = false;
   List<dynamic> _userBookings = [];
 
@@ -74,7 +77,7 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Select Hospital to Chat',
+              AppLocalizations.of(context)!.selectHospitalChat,
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -83,7 +86,7 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
             ),
             const SizedBox(height: 8),
             Text(
-              'You can only chat with hospitals where you have an active booking.',
+              AppLocalizations.of(context)!.chatBookingRequirement,
               style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey),
             ),
             const SizedBox(height: 20),
@@ -98,7 +101,7 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
                       Icon(Icons.event_busy, size: 48, color: Colors.grey[300]),
                       const SizedBox(height: 12),
                       Text(
-                        'No bookings found.',
+                        AppLocalizations.of(context)!.noBookingsFound,
                         style: GoogleFonts.poppins(color: Colors.grey, fontWeight: FontWeight.w500),
                       ),
                     ],
@@ -126,7 +129,7 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
                         style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14),
                       ),
                       subtitle: Text(
-                        'Verified Hospital',
+                        AppLocalizations.of(context)!.verifiedHospital,
                         style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey),
                       ),
                       trailing: const Icon(Icons.chevron_right, color: Colors.grey),
@@ -163,7 +166,35 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
     super.dispose();
   }
 
-  final List<Map<String, dynamic>> _chats = [];
+  final List<Map<String, dynamic>> _chats = [
+    {
+      'name': 'Mock General Hospital',
+      'message': 'Your appointment is confirmed for tomorrow.',
+      'time': '10:30 AM',
+      'unread': 2,
+      'isOnline': true,
+      'imageUrl': 'https://images.unsplash.com/photo-1586773860418-d37222d8fce2?w=800',
+      'isReception': true,
+    },
+    {
+      'name': 'City Central Clinic',
+      'message': 'Please bring your previous reports.',
+      'time': 'Yesterday',
+      'unread': 0,
+      'isOnline': false,
+      'imageUrl': 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800',
+      'isReception': true,
+    },
+    {
+      'name': 'Wellness Health Centre',
+      'message': 'How are you feeling today?',
+      'time': 'Mon',
+      'unread': 0,
+      'isOnline': true,
+      'imageUrl': 'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=800',
+      'isReception': true,
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -175,7 +206,7 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
         automaticallyImplyLeading: false,
 
         title: Text(
-          'Messages',
+          _showingArchived ? AppLocalizations.of(context)!.archivedChats : AppLocalizations.of(context)!.messages,
           style: GoogleFonts.poppins(
             color: Colors.black,
             fontWeight: FontWeight.bold,
@@ -183,73 +214,96 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
           ),
         ),
         centerTitle: true,
+        leading: _showingArchived 
+          ? ScaleOnTap(
+              onTap: () => setState(() => _showingArchived = false),
+              child: const Icon(Icons.arrow_back, color: Color(0xFF2E4C9D)),
+            )
+          : null,
         actions: [
-          ScaleOnTap(
-            onTap: _showNewChatBottomSheet,
-            child: const Padding(
-              padding: EdgeInsets.only(right: 20),
-              child: Icon(Icons.edit_note_rounded, color: Color(0xFF2E4C9D), size: 28),
+          if (!_showingArchived)
+            ScaleOnTap(
+              onTap: _showNewChatBottomSheet,
+              child: const Padding(
+                padding: EdgeInsets.only(right: 20),
+                child: Icon(Icons.edit_note_rounded, color: Color(0xFF2E4C9D), size: 28),
+              ),
             ),
-          ),
         ],
 
       ),
       body: Column(
         children: [
           // Search Bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: GlassBox(
-              borderRadius: 25,
-              opacity: 0.05,
-              color: Colors.grey,
-              child: Container(
-                height: 50,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    const Icon(Icons.search, color: Colors.blueGrey),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Search hospital chats',
-                          hintStyle: GoogleFonts.poppins(color: Colors.blueGrey, fontSize: 14),
-                          border: InputBorder.none,
+          if (!_showingArchived)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: GlassBox(
+                borderRadius: 25,
+                opacity: 0.05,
+                color: Colors.grey,
+                child: Container(
+                  height: 50,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.search, color: Colors.blueGrey),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: AppLocalizations.of(context)!.searchChats,
+                            hintStyle: GoogleFonts.poppins(color: Colors.blueGrey, fontSize: 14),
+                            border: InputBorder.none,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
 
           const Divider(height: 1, thickness: 0.5),
 
           // Chat List - Filtered to only show Reception/Hospital chats
           Expanded(
             child: AnimationLimiter(
-              child: _visibleChats.isEmpty
+              child: (_showingArchived ? _archivedChats : _visibleChats).isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey[200]),
+                          Icon(
+                            _showingArchived ? Icons.archive_outlined : Icons.chat_bubble_outline, 
+                            size: 64, color: Colors.grey[200]
+                          ),
                           const SizedBox(height: 16),
                           Text(
-                            'No conversations yet',
+                            _showingArchived ? AppLocalizations.of(context)!.noArchivedChats : AppLocalizations.of(context)!.noConversations,
                             style: GoogleFonts.poppins(color: Colors.grey, fontSize: 16),
                           ),
+                          if (_showingArchived)
+                            TextButton(
+                              onPressed: () => setState(() => _showingArchived = false),
+                              child: Text(AppLocalizations.of(context)!.goBack, style: GoogleFonts.poppins(color: const Color(0xFF2E4C9D))),
+                            ),
                         ],
                       ),
                     )
                   : ListView.builder(
                       controller: _messagesScrollController,
                       padding: const EdgeInsets.only(top: 10),
-                      itemCount: _visibleChats.length,
+                      itemCount: (_showingArchived ? _archivedChats : _visibleChats).length + (!_showingArchived && _archivedChats.isNotEmpty ? 1 : 0),
                       itemBuilder: (context, index) {
-                        final chat = _visibleChats[index];
+                        if (!_showingArchived && _archivedChats.isNotEmpty && index == 0) {
+                          return _buildArchivedBanner();
+                        }
+                        
+                        final chatIndex = (!_showingArchived && _archivedChats.isNotEmpty) ? index - 1 : index;
+                        final chats = _showingArchived ? _archivedChats : _visibleChats;
+                        final chat = chats[chatIndex];
+                        
                         return AnimationConfiguration.staggeredList(
                           position: index,
                           duration: const Duration(milliseconds: 500),
@@ -262,7 +316,10 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
                                   color: Colors.blue,
                                   alignment: Alignment.centerLeft,
                                   padding: const EdgeInsets.only(left: 20),
-                                  child: const Icon(Icons.archive_outlined, color: Colors.white),
+                                  child: Icon(
+                                    _showingArchived ? Icons.unarchive_outlined : Icons.archive_outlined, 
+                                    color: Colors.white
+                                  ),
                                 ),
                                 secondaryBackground: Container(
                                   color: Colors.red,
@@ -272,21 +329,43 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
                                 ),
                                 onDismissed: (direction) {
                                   setState(() {
-                                    _visibleChats.removeAt(index);
+                                    if (direction == DismissDirection.startToEnd) {
+                                      // Archive/Unarchive
+                                      if (_showingArchived) {
+                                        _archivedChats.removeAt(chatIndex);
+                                        _visibleChats.insert(0, chat);
+                                      } else {
+                                        _visibleChats.removeAt(chatIndex);
+                                        _archivedChats.insert(0, chat);
+                                      }
+                                    } else {
+                                      // Delete
+                                      chats.removeAt(chatIndex);
+                                    }
                                   });
+                                  
                                   ToknSnackBar.show(
                                     context, 
                                     message: direction == DismissDirection.endToStart
                                         ? 'Conversation deleted'
-                                        : 'Conversation archived',
+                                        : (_showingArchived ? 'Conversation unarchived' : 'Conversation archived'),
                                     actionLabel: 'UNDO',
                                     onAction: () {
                                       setState(() {
-                                        _visibleChats.insert(index, chat);
+                                        if (direction == DismissDirection.startToEnd) {
+                                          if (_showingArchived) {
+                                            _visibleChats.removeAt(0);
+                                            _archivedChats.insert(chatIndex, chat);
+                                          } else {
+                                            _archivedChats.removeAt(0);
+                                            _visibleChats.insert(chatIndex, chat);
+                                          }
+                                        } else {
+                                          chats.insert(chatIndex, chat);
+                                        }
                                       });
                                     },
                                   );
-
                                 },
                                 child: _buildChatItem(chat),
                               ),
@@ -299,6 +378,43 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
           ),
 
         ],
+      ),
+    );
+  }
+
+  Widget _buildArchivedBanner() {
+    return ScaleOnTap(
+      onTap: () => setState(() => _showingArchived = true),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: Colors.grey.shade100, width: 1)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.archive_outlined, color: Color(0xFF2E4C9D), size: 24),
+            const SizedBox(width: 15),
+            Text(
+              AppLocalizations.of(context)!.archived,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.black,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              _archivedChats.length.toString(),
+              style: GoogleFonts.poppins(
+                color: const Color(0xFF2E4C9D),
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(width: 5),
+            const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+          ],
+        ),
       ),
     );
   }

@@ -85,6 +85,7 @@ class _MyAppState extends State<MyApp> {
             supportedLocales: const [
               Locale('en'), // English
               Locale('hi'), // Hindi
+              Locale('pa'), // Punjabi
             ],
             locale: languageProvider.currentLocale,
             builder: (context, child) => LockScreen(child: child!),
