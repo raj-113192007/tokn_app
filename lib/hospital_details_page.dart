@@ -6,6 +6,7 @@ import 'widgets/glass_bottom_bar.dart';
 
 import 'services/api_service.dart';
 import 'services/supabase_service.dart';
+import 'services/wallet_service.dart';
 import 'widgets/tokn_snackbar.dart';
 
 
@@ -636,6 +637,106 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
   }
 
   Future<void> _handleBooking(BuildContext context, String type, double price, String patientName, String description) async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Select Payment Method',
+              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Total Amount: ₹$price',
+              style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF2E4C9D), fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 20),
+            
+            // Wallet Option
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.grey.shade200)),
+              leading: const Icon(Icons.account_balance_wallet_outlined, color: Color(0xFF2E4C9D)),
+              title: Text('TokN Wallet', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+              subtitle: Text('Pay using your wallet balance', style: GoogleFonts.poppins(fontSize: 12)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.pop(context);
+                _processWalletPayment(type, price, patientName, description);
+              },
+            ),
+            const SizedBox(height: 12),
+            
+            // UPI Option
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.grey.shade200)),
+              leading: const Icon(Icons.qr_code_scanner, color: Colors.green),
+              title: Text('UPI Apps', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+              subtitle: Text('Google Pay, PhonePe, etc.', style: GoogleFonts.poppins(fontSize: 12)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.pop(context);
+                _processUpiPayment(type, price, patientName, description);
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  final WalletService _walletService = WalletService();
+
+  Future<void> _processWalletPayment(String type, double price, String patientName, String description) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final result = await _walletService.deductBalance(
+      amount: price,
+      description: '$type Booking for $patientName',
+    );
+
+    if (mounted) {
+      Navigator.pop(context); // Close loading
+
+      if (result['success'] == true) {
+        _finalizeBooking(type, price, patientName, description);
+      } else {
+        ToknSnackBar.show(context, message: result['message'] ?? 'Insufficient wallet balance');
+      }
+    }
+  }
+
+  Future<void> _processUpiPayment(String type, double price, String patientName, String description) async {
+    final success = await _walletService.launchUpiPayment(
+      amount: price,
+      note: '$type Booking Payment'
+    );
+
+    if (success && mounted) {
+      // In P2P (personal UPI), we can't verify SUCCESS automatically.
+      // We assume user will pay and show the confirmation.
+      _finalizeBooking(type, price, patientName, description);
+    } else if (mounted) {
+      ToknSnackBar.show(context, message: 'Could not open UPI apps');
+    }
+  }
+
+  Future<void> _finalizeBooking(String type, double price, String patientName, String description) async {
     final now = DateTime.now();
     final dateStr = "${now.year}-${now.month}-${now.day}";
     final timeStr = "${now.hour}:${now.minute}";
@@ -656,11 +757,11 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
       description: description,
     );
 
-    if (context.mounted) {
+    if (mounted) {
       Navigator.pop(context); // Close loading
 
       if (result['success'] == true) {
-        final token = result['data']['token_number'] ?? 'M-01'; // Fallback for mock
+        final token = result['data']['token_number'].toString();
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -670,10 +771,6 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text('${AppLocalizations.of(context)!.tokenFor} $patientName', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: const Color(0xFF2E4C9D))),
-                if (description.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text('Problem: $description', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[700], fontStyle: FontStyle.italic)),
-                ],
                 const SizedBox(height: 16),
                 Text(AppLocalizations.of(context)!.yourTokenIs(type), style: GoogleFonts.poppins()),
                 const SizedBox(height: 10),
@@ -689,7 +786,10 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pop(context); // Go back home or to bookings
+                },
                 child: Text('OK', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
               ),
             ],

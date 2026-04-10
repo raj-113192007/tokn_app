@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'services/security_service.dart';
+import 'services/wallet_service.dart';
 import 'widgets/animation_utils.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'widgets/tokn_snackbar.dart';
 import 'widgets/tokn_snackbar.dart';
 
 
@@ -16,32 +18,27 @@ class WalletPage extends StatefulWidget {
 
 class _WalletPageState extends State<WalletPage> {
   bool _isBalanceVisible = false;
+  final WalletService _walletService = WalletService();
+  double _balance = 0.0;
+  List<Map<String, dynamic>> _history = [];
+  bool _isLoading = true;
 
-  final List<Map<String, dynamic>> _transactions = [
-    {
-      'hospital': 'Medanta - The Medicity',
-      'icon': Icons.local_hospital,
-      'transactions': [
-        {'title': 'Consultation Fee', 'date': '24 Oct, 2023', 'amount': -500.0, 'status': 'Completed'},
-        {'title': 'Lab Report - Blood Test', 'date': '20 Oct, 2023', 'amount': -1200.0, 'status': 'Completed'},
-      ]
-    },
-    {
-      'hospital': 'Apollo Hospital',
-      'icon': Icons.business_outlined,
-      'transactions': [
-        {'title': 'Token Booking #892', 'date': '15 Oct, 2023', 'amount': -300.0, 'status': 'Completed'},
-        {'title': 'Refund - Cancelled Booking', 'date': '12 Oct, 2023', 'amount': 300.0, 'status': 'Refunded'},
-      ]
-    },
-    {
-      'hospital': 'Max Super Speciality',
-      'icon': Icons.health_and_safety_outlined,
-      'transactions': [
-        {'title': 'Pharmacy - Medicine Bill', 'date': '05 Oct, 2023', 'amount': -850.0, 'status': 'Completed'},
-      ]
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _refreshData();
+  }
+
+  Future<void> _refreshData() async {
+    setState(() => _isLoading = true);
+    final balance = await _walletService.getBalance();
+    final history = await _walletService.getTransactionHistory();
+    setState(() {
+      _balance = balance;
+      _history = history;
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,36 +61,65 @@ class _WalletPageState extends State<WalletPage> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: _refreshData,
+            icon: const Icon(Icons.refresh, color: Color(0xFF2E4C9D)),
+          )
+        ],
       ),
-      body: AnimationLimiter(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: AnimationConfiguration.toStaggeredList(
-              duration: const Duration(milliseconds: 500),
-              childAnimationBuilder: (widget) => SlideAnimation(
-                verticalOffset: 50.0,
-                child: FadeInAnimation(child: widget),
-              ),
-              children: [
-                _buildBalanceCard(securityProvider),
-                const SizedBox(height: 30),
-                Text(
-                  'Transaction History',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator())
+        : AnimationLimiter(
+            child: RefreshIndicator(
+              onRefresh: _refreshData,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: AnimationConfiguration.toStaggeredList(
+                    duration: const Duration(milliseconds: 500),
+                    childAnimationBuilder: (widget) => SlideAnimation(
+                      verticalOffset: 50.0,
+                      child: FadeInAnimation(child: widget),
+                    ),
+                    children: [
+                      _buildBalanceCard(securityProvider),
+                      const SizedBox(height: 30),
+                      Text(
+                        'Transaction History',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      if (_history.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 40),
+                            child: Column(
+                              children: [
+                                Icon(Icons.history, size: 60, color: Colors.grey[300]),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'No transactions yet',
+                                  style: GoogleFonts.poppins(color: Colors.grey, fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      else
+                        ..._history.map((tx) => _buildTransactionItem(tx)).toList(),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 15),
-                ..._transactions.map((group) => _buildHospitalGroup(group)).toList(),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
     );
   }
 
@@ -147,7 +173,7 @@ class _WalletPageState extends State<WalletPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            _isBalanceVisible ? '₹2,500.00' : '₹ • • • • • •',
+            _isBalanceVisible ? '₹${_balance.toStringAsFixed(2)}' : '₹ • • • • • •',
             style: GoogleFonts.poppins(
               color: Colors.white,
               fontSize: 32,
@@ -161,7 +187,7 @@ class _WalletPageState extends State<WalletPage> {
                 child: _buildBalanceAction(
                   icon: Icons.add_circle_outline,
                   label: 'Add Money',
-                  onTap: () {},
+                  onTap: _showAddMoneyDialog,
                 ),
               ),
               const SizedBox(width: 15),
@@ -169,7 +195,9 @@ class _WalletPageState extends State<WalletPage> {
                 child: _buildBalanceAction(
                   icon: Icons.send_rounded,
                   label: 'Pay Hospital',
-                  onTap: () {},
+                  onTap: () {
+                    ToknSnackBar.show(context, message: 'Select a hospital from home to pay.');
+                  },
                 ),
               ),
             ],
@@ -208,92 +236,153 @@ class _WalletPageState extends State<WalletPage> {
     );
   }
 
-  Widget _buildHospitalGroup(Map<String, dynamic> group) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF2F6FE),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(group['icon'] as IconData, color: const Color(0xFF2E4C9D), size: 18),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                group['hospital'] as String,
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Container(
+  Widget _buildTransactionItem(Map<String, dynamic> tx) {
+    final amount = (tx['amount'] as num).toDouble();
+    final isCredit = tx['transaction_type'] == 'credit';
+    final date = DateTime.parse(tx['created_at']).toLocal();
+    final formattedDate = "${date.day} ${_getMonth(date.month)}, ${date.year}";
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.02),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              )
-            ],
+            color: isCredit ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+            shape: BoxShape.circle,
           ),
-          child: ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: (group['transactions'] as List).length,
-            separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey[100], indent: 15, endIndent: 15),
-            itemBuilder: (context, index) {
-              final tx = (group['transactions'] as List)[index];
-              final isNegative = (tx['amount'] as double) < 0;
-              return ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                title: Text(
-                  tx['title'] as String,
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13),
-                ),
-                subtitle: Text(
-                  tx['date'] as String,
-                  style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey),
-                ),
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '${isNegative ? '-' : '+'}₹${(tx['amount'] as double).abs()}',
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: isNegative ? Colors.redAccent : const Color(0xFF389B66),
-                      ),
-                    ),
-                    Text(
-                      tx['status'] as String,
-                      style: GoogleFonts.poppins(
-                        fontSize: 10,
-                        color: tx['status'] == 'Refunded' ? Colors.blue : Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
+          child: Icon(
+            isCredit ? Icons.arrow_downward : Icons.arrow_upward,
+            color: isCredit ? Colors.green : Colors.red,
+            size: 20,
           ),
         ),
-        const SizedBox(height: 20),
-      ],
+        title: Text(
+          tx['description'] ?? (isCredit ? 'Wallet Recharge' : 'Payment'),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13),
+        ),
+        subtitle: Text(
+          formattedDate,
+          style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey),
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              '${isCredit ? '+' : '-'}₹${amount.abs()}',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: isCredit ? const Color(0xFF389B66) : Colors.redAccent,
+              ),
+            ),
+            Text(
+              tx['status']?.toString().toUpperCase() ?? 'PENDING',
+              style: GoogleFonts.poppins(
+                fontSize: 9,
+                color: tx['status'] == 'completed' ? Colors.green : Colors.orange,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
+  }
+
+  String _getMonth(int month) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[month - 1];
+  }
+
+  void _showAddMoneyDialog() {
+    final TextEditingController amountController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Add Money', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: amountController,
+              keyboardType: TextInputType.number,
+              style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+              decoration: InputDecoration(
+                hintText: 'Enter Amount',
+                prefixText: '₹ ',
+                hintStyle: GoogleFonts.poppins(fontSize: 18, color: Colors.grey),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [100, 500, 1000].map((amt) => ActionChip(
+                label: Text('₹$amt'),
+                onPressed: () => amountController.text = amt.toString(),
+              )).toList(),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2E4C9D),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              final amount = double.tryParse(amountController.text);
+              if (amount != null && amount > 0) {
+                Navigator.pop(context);
+                _selectUpiApp(amount);
+              } else {
+                ToknSnackBar.show(context, message: 'Please enter a valid amount');
+              }
+            },
+            child: const Text('Proceed', style: TextStyle(color: Colors.white)),
+          )
+        ],
+      ),
+    );
+  }
+
+  void _selectUpiApp(double amount) async {
+    final success = await _walletService.launchUpiPayment(
+      amount: amount,
+      note: 'Wallet Recharge'
+    );
+
+    if (success && mounted) {
+      // For personal UPI IDs, we finalize immediately as we can't track real-time bank status
+      final successFinal = await _walletService.finalizeRecharge(
+        amount: amount,
+        txnId: 'TOK-${DateTime.now().millisecondsSinceEpoch}',
+        responseCode: '00',
+      );
+      if (successFinal && mounted) {
+        ToknSnackBar.show(context, message: 'Wallet recharged successfully!', type: SnackBarType.success);
+        _refreshData();
+      }
+    } else if (mounted) {
+      ToknSnackBar.show(context, message: 'Could not open UPI apps');
+    }
   }
 
   void _verifyPin(SecurityProvider securityProvider) {
@@ -356,8 +445,6 @@ class _WalletPageState extends State<WalletPage> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              // Navigation to settings would go here, but context might be tricky inside dialog
-              // Usually better to pass a callback or use a Navigator observer
             },
             child: const Text('Go to Settings'),
           )

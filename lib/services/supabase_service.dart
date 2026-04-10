@@ -238,25 +238,33 @@ class SupabaseService {
   }
 
   // Book a new token
-  Future<void> bookToken({
-    required String doctorId,
+  Future<Map<String, dynamic>> bookToken({
     required String hospitalId,
-    required int tokenNumber,
+    required String bookingType,
+    required double price,
     String? patientName,
     String? description,
+    String? doctorId,
   }) async {
     final user = client.auth.currentUser;
     if (user == null) throw Exception("User not logged in");
 
-    await client.from('tokens').insert({
+    // Generate a random token number for now (In real app, this would be auto-incremented by DB)
+    final tokenNumber = (DateTime.now().millisecondsSinceEpoch % 100) + 1;
+
+    final response = await client.from('tokens').insert({
       'user_id': user.id,
-      'doctor_id': doctorId,
       'hospital_id': hospitalId,
+      'doctor_id': doctorId, // Optional
       'token_number': tokenNumber,
       'patient_name': patientName ?? 'You',
       'problem_description': description ?? '',
+      'booking_type': bookingType,
+      'price': price,
       'status': 'pending',
-    });
+    }).select().single();
+
+    return response;
   }
 
   // ─── LIKED HOSPITALS ──────────────────────────────────

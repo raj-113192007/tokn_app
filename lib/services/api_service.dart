@@ -239,43 +239,40 @@ class ApiService {
     String? patientName,
     String? description,
   }) async {
-    await Future.delayed(const Duration(seconds: 1));
-    return {
-      'success': true,
-      'data': {
-        '_id': 'booking_123',
-        'hospital': hospitalId,
-        'booking_date': date,
-        'booking_time': time,
-        'booking_type': type,
-        'booking_price': price,
-        'patient_name': patientName ?? 'You',
-        'problem_description': description ?? '',
-        'status': 'Pending'
-      }
-    };
+    try {
+      final data = await SupabaseService().bookToken(
+        hospitalId: hospitalId,
+        bookingType: type,
+        price: price,
+        patientName: patientName,
+        description: description,
+      );
+      return {'success': true, 'data': data};
+    } catch (e) {
+      return {'success': false, 'error': ErrorMapper.mapError(e.toString())};
+    }
   }
 
   // Bookings: Get My Bookings
   static Future<Map<String, dynamic>> getBookings() async {
-    await Future.delayed(const Duration(seconds: 1));
-    return {
-      'success': true,
-      'count': 1,
-      'data': [
-        {
-          '_id': 'booking_123',
-          'hospital': {
-            '_id': 'hospital_1',
-            'name': 'Mock General Hospital'
-          },
-          'booking_date': '2026-12-01',
-          'booking_time': '10:00 AM',
-          'token_number': '48',
-          'status': 'Pending'
-        }
-      ]
-    };
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return {'success': false, 'error': 'Not logged in'};
+
+      final List<dynamic> data = await Supabase.instance.client
+          .from('tokens')
+          .select('*, hospital:hospital_id(name)')
+          .eq('user_id', user.id)
+          .order('booking_time', ascending: false);
+
+      return {
+        'success': true,
+        'count': data.length,
+        'data': data
+      };
+    } catch (e) {
+      return {'success': false, 'error': ErrorMapper.mapError(e.toString())};
+    }
   }
 
   // Logout

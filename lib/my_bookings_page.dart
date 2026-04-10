@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'widgets/animation_utils.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:home_widget/home_widget.dart';
@@ -177,6 +178,10 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
             return _buildNotificationBox();
           }
           final b = upcomingBookings[index];
+          final bookingTime = DateTime.parse(b['booking_time']).toLocal();
+          final dateStr = DateFormat('dd/MM/yyyy').format(bookingTime);
+          final timeStr = DateFormat.jm().format(bookingTime); // e.g. 5:08 PM
+
           return AnimationConfiguration.staggeredList(
             position: index,
             duration: const Duration(milliseconds: 500),
@@ -185,19 +190,18 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
                 verticalOffset: 20,
                 child: BookingCard(
                   hospitalName: b['hospital']?['name'] ?? 'Hospital',
-                  department: b['hospital']?['categories']?.join(', ') ?? 'General',
-                  tokenNumber: b['token_number'] ?? 'N/A',
+                  department: b['booking_type'] ?? 'General',
+                  tokenNumber: b['token_number'].toString(),
                   doctorName: 'On Duty Doctor',
-                  patientName: 'You',
-                  date: b['booking_date'].split('T')[0],
-                  time: b['booking_time'] ?? 'N/A',
-                  status: b['status'] ?? 'Upcoming',
+                  patientName: b['patient_name'] ?? 'You',
+                  date: dateStr,
+                  time: timeStr,
+                  status: b['status']?.toUpperCase() ?? 'PENDING',
                   actionText: 'Directions',
                 ),
               ),
             ),
           );
-
         },
       ),
     );
@@ -215,6 +219,9 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
         itemCount: completedBookings.length,
         itemBuilder: (context, index) {
           final b = completedBookings[index];
+          final bookingTime = DateTime.parse(b['booking_time']).toLocal();
+          final dateStr = "${bookingTime.day}/${bookingTime.month}/${bookingTime.year}";
+
           return AnimationConfiguration.staggeredList(
             position: index,
             duration: const Duration(milliseconds: 500),
@@ -224,9 +231,9 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
                 child: _buildHistoryCard({
                   'hospital': b['hospital']?['name'] ?? 'Hospital',
                   'doctor': 'On Duty Doctor',
-                  'patient': 'You',
-                  'date': b['booking_date'].split('T')[0],
-                  'token': b['token_number'] ?? 'N/A',
+                  'patient': b['patient_name'] ?? 'You',
+                  'date': dateStr,
+                  'token': b['token_number'].toString(),
                   'image': b['hospital']?['image'] ?? 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800',
                 }, 'COMPLETED', Colors.green),
               ),
@@ -248,6 +255,9 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
         itemCount: cancelledBookings.length,
         itemBuilder: (context, index) {
           final b = cancelledBookings[index];
+          final bookingTime = DateTime.parse(b['booking_time']).toLocal();
+          final dateStr = "${bookingTime.day}/${bookingTime.month}/${bookingTime.year}";
+
           return AnimationConfiguration.staggeredList(
             position: index,
             duration: const Duration(milliseconds: 500),
@@ -257,9 +267,9 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
                 child: _buildHistoryCard({
                   'hospital': b['hospital']?['name'] ?? 'Hospital',
                   'doctor': 'On Duty Doctor',
-                  'patient': 'You',
-                  'date': b['booking_date'].split('T')[0],
-                  'token': b['token_number'] ?? 'N/A',
+                  'patient': b['patient_name'] ?? 'You',
+                  'date': dateStr,
+                  'token': b['token_number'].toString(),
                   'image': b['hospital']?['image'] ?? 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800',
                 }, 'CANCELLED', Colors.redAccent),
               ),
