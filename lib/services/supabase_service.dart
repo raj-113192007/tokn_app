@@ -382,4 +382,39 @@ class SupabaseService {
       return false;
     }
   }
+  // ─── HOSPITALS ───────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getHospitals() async {
+    try {
+      final List<dynamic> data = await client
+          .from('hospitals')
+          .select()
+          .order('name');
+      
+      // Map 'id' to '_id' for compatibility with existing app logic if needed,
+      // but better to keep it consistent.
+      return data.map((e) {
+        final map = Map<String, dynamic>.from(e);
+        map['_id'] = e['id']; // Add alias for backward compatibility
+        return map;
+      }).toList();
+    } catch (e) {
+      print('Error fetching hospitals: $e');
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>?> getHospitalById(String id) async {
+    try {
+      final data = await client
+          .from('hospitals')
+          .select()
+          .eq('id', id)
+          .maybeSingle();
+      return data;
+    } catch (e) {
+      print('Error fetching hospital by ID: $e');
+      return null;
+    }
+  }
 }

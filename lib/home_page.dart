@@ -101,7 +101,8 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         if (result['success'] == true) {
           _upcomingBookings = result['data'].where((b) => 
-            b['status'] == 'Pending' || b['status'] == 'Confirmed'
+            b['status'].toString().toLowerCase() == 'pending' || 
+            b['status'].toString().toLowerCase() == 'confirmed'
           ).toList();
         }
         _isLoadingBookings = false;

@@ -796,7 +796,23 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
           ),
         );
       } else {
-        ToknSnackBar.show(context, message: result['error'] ?? 'Booking failed');
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text('Booking Failed', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+            content: Text(
+              result['error'] ?? 'There was an error creating your booking. If you have already paid, please contact support with your transaction details.',
+              style: GoogleFonts.poppins(),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('OK', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
       }
     }
   }

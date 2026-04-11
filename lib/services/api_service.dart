@@ -199,34 +199,18 @@ class ApiService {
     } catch (e) {
       return {'success': false, 'message': ErrorMapper.mapError(e.toString())};
     }
-
-  }
-
   // Hospitals: Get All
   static Future<Map<String, dynamic>> getHospitals() async {
-    await Future.delayed(const Duration(seconds: 1));
-    return {
-      'success': true,
-      'count': 2,
-      'data': [
-        {
-          '_id': 'hospital_1',
-          'name': 'Mock General Hospital',
-          'location': 'New York, USA',
-          'description': 'A top-rated general hospital.',
-          'type': 'General',
-          'rating': 4.5
-        },
-        {
-          '_id': 'hospital_2',
-          'name': 'Mock City Clinic',
-          'location': 'London, UK',
-          'description': 'Specialized city clinic.',
-          'type': 'Clinic',
-          'rating': 4.2
-        }
-      ]
-    };
+    try {
+      final hospitals = await SupabaseService().getHospitals();
+      return {
+        'success': true,
+        'count': hospitals.length,
+        'data': hospitals
+      };
+    } catch (e) {
+      return {'success': false, 'message': ErrorMapper.mapError(e.toString())};
+    }
   }
 
   // Bookings: Create

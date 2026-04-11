@@ -165,7 +165,8 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
     if (_isLoading) return const Center(child: CircularProgressIndicator());
     
     final upcomingBookings = _allBookings.where((b) => 
-      b['status'] == 'Pending' || b['status'] == 'Confirmed'
+      b['status'].toString().toLowerCase() == 'pending' || 
+      b['status'].toString().toLowerCase() == 'confirmed'
     ).toList();
 
     return AnimationLimiter(
