@@ -199,6 +199,8 @@ class ApiService {
     } catch (e) {
       return {'success': false, 'message': ErrorMapper.mapError(e.toString())};
     }
+  }
+
   // Hospitals: Get All
   static Future<Map<String, dynamic>> getHospitals() async {
     try {
