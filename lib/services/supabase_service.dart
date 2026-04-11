@@ -383,19 +383,19 @@ class SupabaseService {
     }
   }
   // ─── HOSPITALS ───────────────────────────────────────
-
+  
+  // fetch all Hospitals
   Future<List<Map<String, dynamic>>> getHospitals() async {
     try {
       final List<dynamic> data = await client
           .from('hospitals')
           .select()
+          .eq('status', 'active') // Only show active hospitals to patients
           .order('name');
       
-      // Map 'id' to '_id' for compatibility with existing app logic if needed,
-      // but better to keep it consistent.
       return data.map((e) {
         final map = Map<String, dynamic>.from(e);
-        map['_id'] = e['id']; // Add alias for backward compatibility
+        map['_id'] = e['id']; 
         return map;
       }).toList();
     } catch (e) {
@@ -410,6 +410,7 @@ class SupabaseService {
           .from('hospitals')
           .select()
           .eq('id', id)
+          .eq('status', 'active') // Ensure we don't show details of non-active hospitals
           .maybeSingle();
       return data;
     } catch (e) {
