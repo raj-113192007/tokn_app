@@ -88,6 +88,7 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         if (result['success'] == true) {
           _realHospitals = result['data'];
+          _generateDynamicCategories();
         }
         _isLoadingHospitals = false;
       });
@@ -310,19 +311,22 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 20),
               ListTile(
-                leading: const Icon(Icons.location_city),
+                leading: const Icon(Icons.location_city, color: Color(0xFF1E40AF)),
                 title: const Text('Dehradun'),
+                trailing: const Icon(Icons.check_circle, color: Colors.green, size: 20),
                 onTap: () => Navigator.pop(context),
               ),
-              ListTile(
-                leading: const Icon(Icons.location_city),
-                title: const Text('Rishikesh'),
-                onTap: () => Navigator.pop(context),
-              ),
-              ListTile(
-                leading: const Icon(Icons.location_city),
-                title: const Text('Haridwar'),
-                onTap: () => Navigator.pop(context),
+              const Divider(),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Text(
+                  'More cities coming soon!',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
               ),
             ],
           ),
@@ -331,43 +335,34 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  final List<Map<String, String>> _hospitals = [
-    {
-      'name': 'Medanta\nThe Medicity',
-      'image': 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=400',
-    },
-    {
-      'name': 'Apollo Hospital\nDehradun',
-      'image': 'https://images.unsplash.com/photo-1538108149393-fbbd8189718c?w=400',
-    },
-    {
-      'name': 'Max Super\nSpeciality',
-      'image': 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400',
-    },
-    {
-      'name': 'Fortis\nHospital',
-      'image': 'https://images.unsplash.com/photo-1512678080530-7760d81faba6?w=400',
-    },
-  ];
+  List<Map<String, String>> _dynamicCategories = [];
 
-  final List<Map<String, String>> _categories = [
-    {
-      'name': 'Headache',
-      'image': 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=200',
-    },
-    {
-      'name': 'Skin & Derma',
-      'image': 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=200',
-    },
-    {
-      'name': 'Dental',
-      'image': 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=200',
-    },
-    {
-      'name': 'Surgery',
-      'image': 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=200',
-    },
-  ];
+  void _generateDynamicCategories() {
+    final Set<String> uniqueSpecialties = {};
+    for (var h in _realHospitals) {
+      if (h['specialties'] != null && h['specialties'] is List) {
+        for (var s in h['specialties']) {
+          uniqueSpecialties.add(s.toString());
+        }
+      }
+    }
+
+    // Mapping common specialties to images
+    final Map<String, String> specialtyImages = {
+      'Headache': 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=200',
+      'Surgery': 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=200',
+      'Dental': 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=200',
+      'Cardiology': 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=200', // Placeholder
+      'Dermatology': 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=200',
+    };
+
+    setState(() {
+      _dynamicCategories = uniqueSpecialties.map((s) => {
+        'name': s,
+        'image': specialtyImages[s] ?? 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=200', // Default
+      }).toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -696,7 +691,7 @@ class _HomePageState extends State<HomePage> {
                   onMoreTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => AllCategoriesPage(categories: _categories),
+                      builder: (context) => AllCategoriesPage(categories: _dynamicCategories),
                     ),
                   ),
                 ),
@@ -704,17 +699,19 @@ class _HomePageState extends State<HomePage> {
 
                 SizedBox(
                   height: 110,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: _categories.length,
-                    itemBuilder: (context, index) {
-                      return _buildCategoryCard(
-                        _categories[index]['name']!,
-                        _categories[index]['image']!,
-                      );
-                    },
-                  ),
+                  child: _dynamicCategories.isEmpty
+                    ? Center(child: Text('Updating categories...', style: TextStyle(fontSize: 12, color: Colors.grey)))
+                    : ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: _dynamicCategories.length,
+                        itemBuilder: (context, index) {
+                          return _buildCategoryCard(
+                            _dynamicCategories[index]['name']!,
+                            _dynamicCategories[index]['image']!,
+                          );
+                        },
+                      ),
                 ),
 
                 const SizedBox(height: 25),
