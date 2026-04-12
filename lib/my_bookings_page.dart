@@ -178,6 +178,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
           if (index == upcomingBookings.length) {
             return _buildNotificationBox();
           }
+          final b = upcomingBookings[index];
           final createdAt = DateTime.parse(b['created_at']).toLocal();
           final dateStr = DateFormat('dd/MM/yyyy').format(createdAt);
           final timeStr = DateFormat.jm().format(createdAt); // e.g. 5:08 PM

@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:tokn/widgets/animation_utils.dart';
 import 'support_form_page.dart';
 import 'my_tickets_page.dart';
-import 'widgets/animation_utils.dart';
 
 class HelpSupportPage extends StatelessWidget {
   const HelpSupportPage({super.key});

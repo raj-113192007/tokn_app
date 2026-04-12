@@ -31,6 +31,8 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
   bool _isLoadingLike = true;
   Map<String, dynamic>? _hospitalDetails;
   bool _isLoadingDetails = true;
+  List<dynamic> _familyMembers = [];
+  bool _isLoadingFamily = true;
 
   @override
   void initState() {
