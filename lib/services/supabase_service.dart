@@ -391,11 +391,12 @@ class SupabaseService {
           .from('hospitals')
           .select()
           .eq('status', 'active') // Only show active hospitals to patients
-          .order('name');
+          .order('full_name'); // Corrected from 'name' to 'full_name'
       
       return data.map((e) {
         final map = Map<String, dynamic>.from(e);
-        map['_id'] = e['id']; 
+        map['_id'] = e['id'];
+        map['name'] = e['full_name']; // Ensure UI gets 'name' from 'full_name'
         return map;
       }).toList();
     } catch (e) {
