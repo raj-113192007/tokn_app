@@ -164,7 +164,7 @@ class _SignupOtpPageState extends State<SignupOtpPage> {
                                     // Properly resend OTP using the new resendOTP service
                                     await SupabaseService().resendOTP(
                                       phone: widget.phone,
-                                      type: OtpType.sms,
+                                      type: OtpType.signup,
                                     );
                                     if (mounted) {
                                       setState(() => _isLoading = false);

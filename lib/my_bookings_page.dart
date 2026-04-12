@@ -178,10 +178,9 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
           if (index == upcomingBookings.length) {
             return _buildNotificationBox();
           }
-          final b = upcomingBookings[index];
-          final bookingTime = DateTime.parse(b['booking_time']).toLocal();
-          final dateStr = DateFormat('dd/MM/yyyy').format(bookingTime);
-          final timeStr = DateFormat.jm().format(bookingTime); // e.g. 5:08 PM
+          final createdAt = DateTime.parse(b['created_at']).toLocal();
+          final dateStr = DateFormat('dd/MM/yyyy').format(createdAt);
+          final timeStr = DateFormat.jm().format(createdAt); // e.g. 5:08 PM
 
           return AnimationConfiguration.staggeredList(
             position: index,
@@ -220,8 +219,8 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
         itemCount: completedBookings.length,
         itemBuilder: (context, index) {
           final b = completedBookings[index];
-          final bookingTime = DateTime.parse(b['booking_time']).toLocal();
-          final dateStr = "${bookingTime.day}/${bookingTime.month}/${bookingTime.year}";
+          final createdAt = DateTime.parse(b['created_at']).toLocal();
+          final dateStr = "${createdAt.day}/${createdAt.month}/${createdAt.year}";
 
           return AnimationConfiguration.staggeredList(
             position: index,
@@ -256,8 +255,8 @@ class _MyBookingsPageState extends State<MyBookingsPage> with SingleTickerProvid
         itemCount: cancelledBookings.length,
         itemBuilder: (context, index) {
           final b = cancelledBookings[index];
-          final bookingTime = DateTime.parse(b['booking_time']).toLocal();
-          final dateStr = "${bookingTime.day}/${bookingTime.month}/${bookingTime.year}";
+          final createdAt = DateTime.parse(b['created_at']).toLocal();
+          final dateStr = "${createdAt.day}/${createdAt.month}/${createdAt.year}";
 
           return AnimationConfiguration.staggeredList(
             position: index,

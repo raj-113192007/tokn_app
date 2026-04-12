@@ -391,6 +391,11 @@ class _HomePageState extends State<HomePage> {
               setState(() {
                 _selectedIndex = index;
               });
+              
+              // Refresh data when switching tabs
+              if (index == 0) _fetchBookings();
+              if (index == 1) _fetchBookings();
+
               // Update the scroll notifier for the current page
               final pageIds = ['home', 'bookings', 'messages', 'profile'];
               _scrollNotifier.setCurrentPage(pageIds[index]);
@@ -570,16 +575,25 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 15),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: BookingCard(
-                      hospitalName: _upcomingBookings.first['hospital']?['name'] ?? 'Hospital',
-                      department: _upcomingBookings.first['hospital']?['categories']?.join(', ') ?? 'General',
-                      tokenNumber: _upcomingBookings.first['token_number'] ?? 'N/A',
-                      doctorName: 'On Duty Doctor',
-                      patientName: 'You',
-                      date: _upcomingBookings.first['booking_date'].split('T')[0],
-                      time: _upcomingBookings.first['booking_time'] ?? 'N/A',
-                      status: _upcomingBookings.first['status'] ?? 'Upcoming',
-                      actionText: 'Directions',
+                    child: Builder(
+                      builder: (context) {
+                        final b = _upcomingBookings.first;
+                        final createdAt = DateTime.parse(b['created_at']).toLocal();
+                        final dateStr = DateFormat('dd/MM/yyyy').format(createdAt);
+                        final timeStr = DateFormat.jm().format(createdAt);
+
+                        return BookingCard(
+                          hospitalName: b['hospital']?['name'] ?? 'Hospital',
+                          department: b['booking_type'] ?? 'General',
+                          tokenNumber: b['token_number'].toString(),
+                          doctorName: 'On Duty Doctor',
+                          patientName: b['patient_name'] ?? 'You',
+                          date: dateStr,
+                          time: timeStr,
+                          status: b['status']?.toUpperCase() ?? 'PENDING',
+                          actionText: 'Directions',
+                        );
+                      }
                     ),
                   ),
                 ],

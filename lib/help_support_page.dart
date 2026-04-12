@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'support_form_page.dart';
+import 'my_tickets_page.dart';
+import 'widgets/animation_utils.dart';
 
 class HelpSupportPage extends StatelessWidget {
   const HelpSupportPage({super.key});
@@ -7,29 +8,119 @@ class HelpSupportPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8F9FE),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF2E4C9D),
+        backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+        leading: ScaleOnTap(
+          onTap: () => Navigator.pop(context),
+          child: const Icon(Icons.arrow_back_ios, color: Color(0xFF2E4C9D)),
         ),
         title: Text(
           'Help & Support',
           style: GoogleFonts.poppins(
-            color: Colors.white,
+            color: const Color(0xFF2E4C9D),
             fontWeight: FontWeight.bold,
           ),
         ),
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
             _buildHeroBanner(),
+            _buildSupportActions(context),
             _buildKnowledgeBase(),
             _buildFAQSection(),
-            _buildContactSection(),
+            const SizedBox(height: 30),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSupportActions(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildActionCard(
+              context: context,
+              title: 'Raise a Ticket',
+              subtitle: 'Send us a message',
+              icon: Icons.add_comment_rounded,
+              color: const Color(0xFF2E4C9D),
+              onTap: () => Navigator.push(context, SmoothPageRoute(page: const SupportFormPage())),
+            ),
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: _buildActionCard(
+              context: context,
+              title: 'My Tickets',
+              subtitle: 'Track your issues',
+              icon: Icons.history_rounded,
+              color: Colors.orange.shade700,
+              onTap: () => Navigator.push(context, SmoothPageRoute(page: const MyTicketsPage())),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionCard({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return ScaleOnTap(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(height: 15),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: GoogleFonts.poppins(
+                fontSize: 11,
+                color: Colors.grey[500],
+              ),
+            ),
           ],
         ),
       ),
@@ -39,9 +130,9 @@ class HelpSupportPage extends StatelessWidget {
   Widget _buildHeroBanner() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
       decoration: const BoxDecoration(
-        color: Color(0xFF2E4C9D),
+        color: Colors.white,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),
           bottomRight: Radius.circular(30),
@@ -49,27 +140,36 @@ class HelpSupportPage extends StatelessWidget {
       ),
       child: Column(
         children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2E4C9D).withOpacity(0.05),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.support_agent_rounded, color: Color(0xFF2E4C9D), size: 50),
+          ),
+          const SizedBox(height: 20),
           Text(
             'How can we help you?',
             style: GoogleFonts.poppins(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: const Color(0xFF0F172A),
             ),
           ),
           const SizedBox(height: 20),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15),
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(15),
             ),
             child: TextField(
               decoration: InputDecoration(
                 hintText: 'Search for help...',
-                hintStyle: GoogleFonts.poppins(color: Colors.grey),
+                hintStyle: GoogleFonts.poppins(color: Colors.grey, fontSize: 13),
                 border: InputBorder.none,
-                icon: const Icon(Icons.search, color: Color(0xFF2E4C9D)),
+                prefixIcon: const Icon(Icons.search, color: Color(0xFF2E4C9D), size: 20),
               ),
             ),
           ),
@@ -84,17 +184,24 @@ class HelpSupportPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Knowledge Base',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2E4C9D)),
+          Row(
+            children: [
+              Container(width: 4, height: 18, color: const Color(0xFF2E4C9D)),
+              const SizedBox(width: 8),
+              Text(
+                'Knowledge Base',
+                style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 15),
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: 2,
             crossAxisSpacing: 15,
             mainAxisSpacing: 15,
+            childAspectRatio: 1.2,
             children: [
               _buildCategoryCard('Booking Help', Icons.calendar_today, Colors.blue),
               _buildCategoryCard('Payments', Icons.payment, Colors.orange),
@@ -113,21 +220,21 @@ class HelpSupportPage extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 40, color: color),
-          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+            child: Icon(icon, size: 24, color: color),
+          ),
+          const SizedBox(height: 12),
           Text(
             title,
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.black87),
           ),
         ],
       ),
@@ -140,9 +247,15 @@ class HelpSupportPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Frequently Asked Questions',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2E4C9D)),
+          Row(
+            children: [
+              Container(width: 4, height: 18, color: const Color(0xFF2E4C9D)),
+              const SizedBox(width: 8),
+              Text(
+                'Common Questions',
+                style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+              ),
+            ],
           ),
           const SizedBox(height: 15),
           _buildFAQTile('How do I book a token?', 'Select a hospital, choose a doctor, and pick a time slot.'),
@@ -154,60 +267,20 @@ class HelpSupportPage extends StatelessWidget {
   }
 
   Widget _buildFAQTile(String question, String answer) {
-    return ExpansionTile(
-      title: Text(
-        question,
-        style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
-      ),
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(15),
-          child: Text(answer, style: GoogleFonts.poppins(color: Colors.grey[700])),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15)),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 20),
+        title: Text(
+          question,
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.black87),
         ),
-      ],
-    );
-  }
-
-  Widget _buildContactSection() {
-    return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEAF0FF),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
+        iconColor: const Color(0xFF2E4C9D),
         children: [
-          const Text(
-            'Still need help?',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF2E4C9D)),
-          ),
-          const SizedBox(height: 15),
-          _buildContactButton(Icons.email, 'tokn.dev@gmail.com', 'Email Support'),
-          const SizedBox(height: 10),
-          _buildContactButton(Icons.phone, '+91 761121632', 'Call Helpline'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContactButton(IconData icon, String detail, String label) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color(0xFF2E4C9D)),
-          const SizedBox(width: 15),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              Text(detail, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: Text(answer, style: GoogleFonts.poppins(color: Colors.grey[600], fontSize: 13, height: 1.5)),
           ),
         ],
       ),

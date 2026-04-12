@@ -234,7 +234,7 @@ class SupabaseService {
         .from('tokens')
         .stream(primaryKey: ['id'])
         .eq('user_id', user.id)
-        .order('booking_time');
+        .order('created_at');
   }
 
   // Book a new token
@@ -409,14 +409,84 @@ class SupabaseService {
     try {
       final data = await client
           .from('hospitals')
-          .select()
+          .select('*, doctors(*)')
           .eq('id', id)
-          .eq('status', 'active') // Ensure we don't show details of non-active hospitals
+          .eq('status', 'active')
           .maybeSingle();
       return data;
     } catch (e) {
       print('Error fetching hospital by ID: $e');
       return null;
     }
+  }
+  // ─── SUPPORT TICKETS ───────────────────────────────────
+
+  Future<void> submitSupportTicket({
+    required String category,
+    required String subject,
+    required String message,
+    File? attachment,
+  }) async {
+    final user = client.auth.currentUser;
+    if (user == null) throw Exception('User not logged in');
+
+    String? attachmentUrl;
+    if (attachment != null) {
+      final fileExt = attachment.path.split('.').last;
+      final fileName = '${user.id}_ticket_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+      final path = fileName;
+
+      await client.storage.from('support_attachments').upload(path, attachment);
+      attachmentUrl = client.storage.from('support_attachments').getPublicUrl(path);
+    }
+
+    await client.from('support_tickets').insert({
+      'user_id': user.id,
+      'category': category,
+      'subject': subject,
+      'message': message,
+      'attachment_url': attachmentUrl,
+      'status': 'open',
+      'user_type': 'user',
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getTicketMessages(String ticketId) async {
+    try {
+      final List<dynamic> data = await client
+          .from('ticket_replies')
+          .select('*')
+          .eq('ticket_id', ticketId)
+          .order('created_at', ascending: true);
+      return List<Map<String, dynamic>>.from(data);
+    } catch (e) {
+      print('Error fetching ticket messages: $e');
+      return [];
+    }
+  }
+
+  Future<void> sendTicketReply(String ticketId, String message) async {
+    final user = client.auth.currentUser;
+    if (user == null) throw Exception('User not logged in');
+
+    await client.from('ticket_replies').insert({
+      'ticket_id': ticketId,
+      'sender_id': user.id,
+      'message': message,
+      'is_admin': false,
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getSupportTickets() async {
+    final user = client.auth.currentUser;
+    if (user == null) return [];
+
+    final response = await client
+        .from('support_tickets')
+        .select()
+        .eq('user_id', user.id)
+        .order('created_at', ascending: false);
+    
+    return List<Map<String, dynamic>>.from(response as List);
   }
 }

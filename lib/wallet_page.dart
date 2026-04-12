@@ -7,6 +7,7 @@ import 'widgets/animation_utils.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'widgets/tokn_snackbar.dart';
 import 'widgets/tokn_snackbar.dart';
+import 'settings_page.dart';
 
 
 class WalletPage extends StatefulWidget {
@@ -444,7 +445,11 @@ class _WalletPageState extends State<WalletPage> {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(context); // Close dialog
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsPage()),
+              );
             },
             child: const Text('Go to Settings'),
           )

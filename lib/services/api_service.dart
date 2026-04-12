@@ -42,11 +42,12 @@ class ApiService {
         formattedPhone = '+91$phone';
       }
 
-      // Use signInWithOtp — proven to deliver SMS reliably
-      // This creates the user in auth.users if they don't exist
-      // and sends an 'sms' type OTP
-      await SupabaseService().signInWithOtp(
+      // Use signUpWithPhone - strictly for new registrations
+      // This sends a 'signup' type OTP
+      await SupabaseService().signUpWithPhone(
         phone: formattedPhone,
+        password: password,
+        fullName: fullName,
       );
 
       return {
@@ -146,20 +147,18 @@ class ApiService {
       final response = await SupabaseService().verifyOTP(
         phone: formattedPhone,
         token: otp,
-        type: OtpType.sms,
+        type: OtpType.signup, // Changed from sms to signup
       );
 
       if (response.user != null) {
-        // After OTP success, set the email/password (Root Fix)
+        // Email is already in user metadata if we used signUpWithPhone, 
+        // but we verify and set it formally here.
         try {
           await SupabaseService().updateUser(
             email: email,
-            password: password,
           );
         } catch (e) {
           final errorStr = e.toString().toLowerCase();
-          // If email is already set to THIS user or another one, it might fail.
-          // We only throw if it's a "critical" error other than "already exists"
           if (!errorStr.contains('exists') && !errorStr.contains('already registered')) {
             rethrow;
           }
@@ -215,6 +214,15 @@ class ApiService {
     }
   }
 
+  // Hospitals: Get details with doctors
+  static Future<Map<String, dynamic>?> getHospitalDetails(String id) async {
+    try {
+      return await SupabaseService().getHospitalById(id);
+    } catch (e) {
+      return null;
+    }
+  }
+
   // Bookings: Create
   static Future<Map<String, dynamic>> createBooking({
     required String hospitalId,
@@ -245,11 +253,19 @@ class ApiService {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return {'success': false, 'error': 'Not logged in'};
 
-      final List<dynamic> data = await Supabase.instance.client
+      final List<dynamic> rawData = await Supabase.instance.client
           .from('tokens')
-          .select('*, hospital:hospital_id(name)')
+          .select('*, hospital:hospital_id(full_name)')
           .eq('user_id', user.id)
-          .order('booking_time', ascending: false);
+          .order('created_at', ascending: false);
+
+      final data = rawData.map((item) {
+        final map = Map<String, dynamic>.from(item);
+        if (map['hospital'] != null) {
+          map['hospital']['name'] = map['hospital']['full_name'];
+        }
+        return map;
+      }).toList();
 
       return {
         'success': true,

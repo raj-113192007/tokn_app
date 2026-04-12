@@ -29,14 +29,25 @@ class HospitalDetailsPage extends StatefulWidget {
 class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
   bool _isLiked = false;
   bool _isLoadingLike = true;
-  List<Map<String, dynamic>> _familyMembers = [];
-  bool _isLoadingFamily = true;
+  Map<String, dynamic>? _hospitalDetails;
+  bool _isLoadingDetails = true;
 
   @override
   void initState() {
     super.initState();
     _checkIfLiked();
     _fetchFamilyMembers();
+    _fetchHospitalDetails();
+  }
+
+  Future<void> _fetchHospitalDetails() async {
+    final details = await ApiService.getHospitalDetails(widget.hospitalId);
+    if (mounted) {
+      setState(() {
+        _hospitalDetails = details;
+        _isLoadingDetails = false;
+      });
+    }
   }
 
   Future<void> _checkIfLiked() async {
@@ -130,7 +141,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     image: DecorationImage(
-                      image: NetworkImage(widget.hospitalImage),
+                      image: NetworkImage(_hospitalDetails?['image_url'] ?? widget.hospitalImage),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -211,7 +222,9 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    'Multi-Specialty Care & Surgical Center',
+                    _hospitalDetails?['specialties'] != null && (_hospitalDetails!['specialties'] as List).isNotEmpty
+                        ? (_hospitalDetails!['specialties'] as List).join(' • ')
+                        : 'Specialty Healthcare Center',
                     style: GoogleFonts.poppins(
                       color: const Color(0xFF2E4C9D),
                       fontSize: 14,
@@ -253,14 +266,14 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '123 Wellness Blvd, Medical District',
+                                    _hospitalDetails?['location'] ?? 'Location not specified',
                                     style: GoogleFonts.poppins(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
                                     ),
                                   ),
                                   Text(
-                                    'San Francisco, CA 94107',
+                                    'Hospital Address',
                                     style: GoogleFonts.poppins(
                                       color: Colors.grey,
                                       fontSize: 12,
@@ -326,7 +339,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                   ),
                   const SizedBox(height: 15),
                   Text(
-                    'St. Mary\'s General Hospital is a premier healthcare institution dedicated to providing exceptional medical care since 1985. We feature a 24/7 Emergency Trauma Center, advanced Cardiology wing, and state-of-the-art Robotic Surgery facilities.',
+                    _hospitalDetails?['about'] ?? 'This hospital has not provided a description yet.',
                     style: GoogleFonts.poppins(
                       color: Colors.grey[700],
                       fontSize: 14,
@@ -347,14 +360,19 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                   const SizedBox(height: 12),
                   SizedBox(
                     height: 40,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        ScaleOnTap(onTap: () {}, child: _buildSpecialtyChip(Icons.headset_mic_outlined, 'Headache')),
-                        ScaleOnTap(onTap: () {}, child: _buildSpecialtyChip(Icons.medical_services_outlined, 'Surgery')),
-                        ScaleOnTap(onTap: () {}, child: _buildSpecialtyChip(Icons.favorite_outline, 'Cardiology')),
-                      ],
-                    ),
+                    child: _hospitalDetails?['specialties'] == null || (_hospitalDetails!['specialties'] as List).isEmpty
+                      ? Center(child: Text('No specific specialties listed', style: TextStyle(fontSize: 12, color: Colors.grey)))
+                      : ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: (_hospitalDetails!['specialties'] as List).length,
+                          itemBuilder: (context, index) {
+                            final specialty = _hospitalDetails!['specialties'][index];
+                            return ScaleOnTap(
+                              onTap: () {}, 
+                              child: _buildSpecialtyChip(Icons.medical_services_outlined, specialty.toString())
+                            );
+                          },
+                        ),
                   ),
 
                   const SizedBox(height: 30),
@@ -370,35 +388,23 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                   const SizedBox(height: 15),
                   SizedBox(
                     height: 180,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        ScaleOnTap(
-                          onTap: () {},
-                          child: _buildDoctorCard(
-                            'Dr. Sarah Smith',
-                            'Surgery Specialist',
-                            'https://images.unsplash.com/photo-1559839734-2b71ef197ec2?w=200',
-                          ),
+                    child: _hospitalDetails?['doctors'] == null || (_hospitalDetails!['doctors'] as List).isEmpty
+                      ? Center(child: Text('No doctors listed for this hospital', style: TextStyle(color: Colors.grey)))
+                      : ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: (_hospitalDetails!['doctors'] as List).length,
+                          itemBuilder: (context, index) {
+                            final doc = _hospitalDetails!['doctors'][index];
+                            return ScaleOnTap(
+                              onTap: () {},
+                              child: _buildDoctorCard(
+                                doc['full_name'] ?? 'Doctor',
+                                doc['specialty'] ?? 'Specialist',
+                                doc['avatar_url'] ?? 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200',
+                              ),
+                            );
+                          },
                         ),
-                        ScaleOnTap(
-                          onTap: () {},
-                          child: _buildDoctorCard(
-                            'Dr. James Wilson',
-                            'Neurology / Headache',
-                            'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200',
-                          ),
-                        ),
-                        ScaleOnTap(
-                          onTap: () {},
-                          child: _buildDoctorCard(
-                            'Dr. Emily Chen',
-                            'Cardiologist',
-                            'https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=200',
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
 
                   const SizedBox(height: 30),
