@@ -194,7 +194,6 @@ class _LoginOtpPageState extends State<LoginOtpPage> {
         Pinput(
           length: 6,
           autofillHints: const [AutofillHints.oneTimeCode],
-          androidSmsAutofillMethod: AndroidSmsAutofillMethod.smsRetrieverApi,
           defaultPinTheme: PinTheme(
             width: 45,
             height: 55,
