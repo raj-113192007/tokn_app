@@ -11,6 +11,15 @@ import 'package:tokn/utils/error_mapper.dart';
 class ApiService {
   static const _storage = FlutterSecureStorage();
 
+  // Helper to clean phone numbers strictly for Supabase
+  static String _cleanPhone(String phone) {
+    String cleaned = phone.trim().replaceAll(RegExp(r'[^\d+]'), '');
+    if (RegExp(r'^\d{10}$').hasMatch(cleaned)) {
+      cleaned = '+91$cleaned';
+    }
+    return cleaned;
+  }
+
   // Helper to get headers with token (not really needed for mock, but kept for interface)
   static Future<Map<String, String>> _getHeaders() async {
     String? token = await _storage.read(key: 'jwt_token');
@@ -28,8 +37,10 @@ class ApiService {
     required String password,
   }) async {
     try {
+      final formattedPhone = _cleanPhone(phone);
+      
       // 1. Check uniqueness in profiles table first
-      final isRegistered = await SupabaseService().isEmailOrPhoneRegistered(email, phone);
+      final isRegistered = await SupabaseService().isEmailOrPhoneRegistered(email, formattedPhone);
       if (isRegistered) {
         return {
           'success': false, 
@@ -37,24 +48,18 @@ class ApiService {
         };
       }
 
-      String formattedPhone = phone.trim();
-      if (RegExp(r'^\d{10}$').hasMatch(formattedPhone) && !formattedPhone.startsWith('+')) {
-        formattedPhone = '+91$formattedPhone';
-      }
-
-      print('DEBUG: Attempting signup for $formattedPhone');
+      print('DEBUG_FLOW: Attempting signup for $formattedPhone');
 
       // Use signUpWithPhone - strictly for new registrations
-      // This sends a 'signup' type OTP
       final response = await SupabaseService().signUpWithPhone(
         phone: formattedPhone,
         password: password,
         fullName: fullName,
       );
 
-      print('DEBUG: Signup Response - User: ${response.user?.id}, Session: ${response.session != null}');
+      print('DEBUG_FLOW: Response - UserID: ${response.user?.id}, Session: ${response.session != null}');
 
-      // If session is not null, it means the account was auto-confirmed or already verified
+      // If session is not null, it means the account was auto-confirmed
       if (response.session != null) {
         return {
           'success': true,
@@ -63,13 +68,28 @@ class ApiService {
         };
       }
 
+      // FALLBACK: If user was created but no session (needs verification), 
+      // explicitly call resend to be 100% sure the SMS is triggered.
+      if (response.user != null) {
+        print('DEBUG_FLOW: Triggering explicit resend to ensure SMS dispatch...');
+        try {
+          await SupabaseService().resendOTP(
+            phone: formattedPhone,
+            type: OtpType.signup,
+          );
+        } catch (resendError) {
+          print('DEBUG_FLOW: Non-fatal resend error: $resendError');
+          // We continue since the signUp might have already sent it
+        }
+      }
+
       return {
         'success': true,
         'autoConfirmed': false,
         'message': 'Verification code sent.',
       };
     } catch (e) {
-      print('DEBUG: Signup Error: $e');
+      print('DEBUG_FLOW: ERROR: $e');
       return {'success': false, 'message': ErrorMapper.mapError(e.toString())};
     }
 

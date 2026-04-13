@@ -196,11 +196,13 @@ class _SignupOtpPageState extends State<SignupOtpPage> {
                               child: SignupOtpTimerControl(
                                   onResend: () async {
                                     setState(() => _isLoading = true);
-                                    print('DEBUG: Requesting OTP resend for ${widget.phone}');
+                                    print('DEBUG_FLOW: Requesting OTP resend for ${widget.phone}');
                                     try {
-                                      // Properly resend OTP using the new resendOTP service
+                                      // Clean phone just in case, though it should be cleaned from previous page
+                                      final cleanedPhone = widget.phone.trim().replaceAll(RegExp(r'[^\d+]'), '');
+                                      
                                       await SupabaseService().resendOTP(
-                                        phone: widget.phone,
+                                        phone: cleanedPhone,
                                         type: OtpType.signup,
                                       );
                                       if (mounted) {
@@ -208,7 +210,7 @@ class _SignupOtpPageState extends State<SignupOtpPage> {
                                         ToknSnackBar.show(context, message: 'OTP Resent!', type: SnackBarType.success);
                                       }
                                     } catch (e) {
-                                      print('DEBUG: Resend Error: $e');
+                                      print('DEBUG_FLOW: Resend Error: $e');
                                       if (mounted) {
                                         setState(() => _isLoading = false);
                                         ToknSnackBar.show(context, message: ErrorMapper.mapError(e.toString()));

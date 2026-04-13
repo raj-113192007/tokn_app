@@ -9,8 +9,10 @@ class SupabaseService {
 
   // Check if email or phone is already registered in profiles
   Future<bool> isEmailOrPhoneRegistered(String email, String phone) async {
-    String formattedPhone = phone.trim();
-    if (RegExp(r'^\d{10}$').hasMatch(formattedPhone) && !formattedPhone.startsWith('+')) {
+    // Strict cleaning: keep only digits and leading plus
+    String formattedPhone = phone.trim().replaceAll(RegExp(r'[^\d+]'), '');
+    
+    if (RegExp(r'^\d{10}$').hasMatch(formattedPhone)) {
       formattedPhone = '+91$formattedPhone';
     }
 
@@ -41,11 +43,21 @@ class SupabaseService {
     required String password,
     required String fullName,
   }) async {
-    return await client.auth.signUp(
-      phone: phone.trim(),
-      password: password,
-      data: {'full_name': fullName},
-    );
+    final cleanedPhone = phone.trim().replaceAll(RegExp(r'[^\d+]'), '');
+    print('SUPABASE_DEBUG: Calling signUp with Phone: $cleanedPhone');
+    
+    try {
+      final response = await client.auth.signUp(
+        phone: cleanedPhone,
+        password: password,
+        data: {'full_name': fullName},
+      );
+      print('SUPABASE_DEBUG: signUp Response - UserID: ${response.user?.id}, Session: ${response.session != null}');
+      return response;
+    } catch (e) {
+      print('SUPABASE_DEBUG: signUp ERROR: $e');
+      rethrow;
+    }
   }
 
   // Sign in with Password (Email or Phone)
@@ -108,11 +120,20 @@ class SupabaseService {
     String? phone,
     required OtpType type,
   }) async {
-    await client.auth.resend(
-      email: email,
-      phone: phone,
-      type: type,
-    );
+    final cleanedPhone = phone?.trim().replaceAll(RegExp(r'[^\d+]'), '');
+    print('SUPABASE_DEBUG: Calling resend OTP - Type: $type, Phone: $cleanedPhone');
+    
+    try {
+      await client.auth.resend(
+        email: email,
+        phone: cleanedPhone,
+        type: type,
+      );
+      print('SUPABASE_DEBUG: resend successful');
+    } catch (e) {
+      print('SUPABASE_DEBUG: resend ERROR: $e');
+      rethrow;
+    }
   }
 
   // Sign out

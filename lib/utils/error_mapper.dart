@@ -26,8 +26,14 @@ class ErrorMapper {
     }
 
     if (lowerError.contains('too many requests') || 
-        lowerError.contains('over_email_send_rate_limit')) {
+        lowerError.contains('over_email_send_rate_limit') ||
+        lowerError.contains('over_sms_send_rate_limit')) {
       return "Too many requests. Please wait a few minutes before trying again.";
+    }
+
+    if (lowerError.contains('sms_provider_error') || 
+        lowerError.contains('sms provider error')) {
+      return "SMS service is temporarily unavailable. Please try again later or contact support.";
     }
 
     if (lowerError.contains('otp expired') || 
