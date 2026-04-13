@@ -37,24 +37,39 @@ class ApiService {
         };
       }
 
-      String formattedPhone = phone;
-      if (RegExp(r'^\d{10}$').hasMatch(phone) && !phone.startsWith('+')) {
-        formattedPhone = '+91$phone';
+      String formattedPhone = phone.trim();
+      if (RegExp(r'^\d{10}$').hasMatch(formattedPhone) && !formattedPhone.startsWith('+')) {
+        formattedPhone = '+91$formattedPhone';
       }
+
+      print('DEBUG: Attempting signup for $formattedPhone');
 
       // Use signUpWithPhone - strictly for new registrations
       // This sends a 'signup' type OTP
-      await SupabaseService().signUpWithPhone(
+      final response = await SupabaseService().signUpWithPhone(
         phone: formattedPhone,
         password: password,
         fullName: fullName,
       );
 
+      print('DEBUG: Signup Response - User: ${response.user?.id}, Session: ${response.session != null}');
+
+      // If session is not null, it means the account was auto-confirmed or already verified
+      if (response.session != null) {
+        return {
+          'success': true,
+          'autoConfirmed': true,
+          'message': 'Signup successful!',
+        };
+      }
+
       return {
         'success': true,
+        'autoConfirmed': false,
         'message': 'Verification code sent.',
       };
     } catch (e) {
+      print('DEBUG: Signup Error: $e');
       return {'success': false, 'message': ErrorMapper.mapError(e.toString())};
     }
 

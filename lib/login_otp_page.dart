@@ -6,6 +6,7 @@ import 'widgets/animation_utils.dart';
 import 'services/supabase_service.dart';
 import 'services/api_service.dart';
 import 'widgets/tokn_snackbar.dart';
+import 'package:pinput/pinput.dart';
 
 
 
@@ -189,15 +190,44 @@ class _LoginOtpPageState extends State<LoginOtpPage> {
         ),
         const SizedBox(height: 20),
 
-        // OTP Input Fields
-        LoginOtpInputRow(
-          onChanged: (isComplete, otp) {
+        // OTP Input using Pinput for Autofill support
+        Pinput(
+          length: 6,
+          autofillHints: const [AutofillHints.oneTimeCode],
+          androidSmsAutofillMethod: AndroidSmsAutofillMethod.smsRetrieverApi,
+          defaultPinTheme: PinTheme(
+            width: 45,
+            height: 55,
+            textStyle: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF2E4C9D), width: 1.5),
+            ),
+          ),
+          focusedPinTheme: PinTheme(
+            width: 45,
+            height: 55,
+            textStyle: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF2E4C9D), width: 2.5),
+            ),
+          ),
+          onCompleted: (pin) {
+            _currentOtp = pin;
+            _isCodeComplete = true;
+            _verifyOtp(pin);
+          },
+          onChanged: (pin) {
             setState(() {
-              _isCodeComplete = isComplete;
-              _currentOtp = otp;
-              if (isComplete) {
-                _verifyOtp(otp);
-              }
+              _currentOtp = pin;
+              _isCodeComplete = pin.length == 6;
             });
           },
         ),
@@ -266,86 +296,6 @@ class _LoginOtpPageState extends State<LoginOtpPage> {
   }
 }
 
-class LoginOtpInputRow extends StatefulWidget {
-  final Function(bool, String) onChanged;
-  const LoginOtpInputRow({super.key, required this.onChanged});
-
-  @override
-  State<LoginOtpInputRow> createState() => _LoginOtpInputRowState();
-}
-
-class _LoginOtpInputRowState extends State<LoginOtpInputRow> {
-  final List<TextEditingController> _controllers = List.generate(
-    6,
-    (_) => TextEditingController(),
-  );
-  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
-
-
-  @override
-  void dispose() {
-    for (var c in _controllers) {
-      c.dispose();
-    }
-    for (var n in _focusNodes) {
-      n.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: List.generate(6, (index) {
-        return SizedBox(
-          width: 45,
-          height: 55,
-          child: TextField(
-            controller: _controllers[index],
-            focusNode: _focusNodes[index],
-            textAlign: TextAlign.center,
-            keyboardType: TextInputType.number,
-            maxLength: 1,
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-            decoration: InputDecoration(
-              counterText: '',
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Color(0xFF2E4C9D),
-                  width: 2,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Color(0xFF23B5D3),
-                  width: 2,
-                ),
-              ),
-            ),
-            onChanged: (value) {
-              if (value.isNotEmpty && index < 5) {
-                _focusNodes[index + 1].requestFocus();
-              } else if (value.isEmpty && index > 0) {
-                _focusNodes[index - 1].requestFocus();
-              }
-
-              String code = _controllers.map((c) => c.text).join();
-              bool isComplete = code.length == 6;
-              widget.onChanged(isComplete, code);
-            },
-          ),
-        );
-      }),
-    );
-
-  }
-}
 
 class LoginOtpTimerControl extends StatefulWidget {
   final VoidCallback onResend;

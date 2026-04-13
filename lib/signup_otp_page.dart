@@ -7,6 +7,8 @@ import 'services/supabase_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'services/api_service.dart';
 import 'widgets/tokn_snackbar.dart';
+import 'package:pinput/pinput.dart';
+import 'utils/error_mapper.dart';
 
 class SignupOtpPage extends StatefulWidget {
   final String fullName;
@@ -34,6 +36,7 @@ class _SignupOtpPageState extends State<SignupOtpPage> {
 
   Future<void> _verifyOtp() async {
     setState(() => _isLoading = true);
+    print('DEBUG: Verifying OTP $_currentOtp for ${widget.phone}');
     try {
       final result = await ApiService.verifySignupOtp(
         email: widget.email,
@@ -42,6 +45,8 @@ class _SignupOtpPageState extends State<SignupOtpPage> {
         password: widget.password,
         otp: _currentOtp,
       );
+
+      print('DEBUG: Verification Result - Success: ${result['success']}');
 
       if (mounted) {
         setState(() => _isLoading = false);
@@ -61,9 +66,10 @@ class _SignupOtpPageState extends State<SignupOtpPage> {
         }
       }
     } catch (e) {
+      print('DEBUG: Verification Error: $e');
       if (mounted) {
         setState(() => _isLoading = false);
-        ToknSnackBar.show(context, message: e.toString());
+        ToknSnackBar.show(context, message: ErrorMapper.mapError(e.toString()));
       }
     }
   }
@@ -142,41 +148,74 @@ class _SignupOtpPageState extends State<SignupOtpPage> {
                             ),
                             const SizedBox(height: 30),
                             
-                            // OTP Input (Reusing the row logic style)
-                            SignupOtpInputRow(
-                              onChanged: (isComplete, otp) {
-                                setState(() {
-                                  _isCodeComplete = isComplete;
-                                  _currentOtp = otp;
-                                });
-                                if (isComplete) {
+                            // OTP Input using Pinput for Autofill support
+                            Center(
+                              child: Pinput(
+                                length: 6,
+                                autofillHints: const [AutofillHints.oneTimeCode],
+                                androidSmsAutofillMethod: AndroidSmsAutofillMethod.smsRetrieverApi,
+                                defaultPinTheme: PinTheme(
+                                  width: 45,
+                                  height: 55,
+                                  textStyle: GoogleFonts.poppins(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: const Color(0xFFEA953B), width: 1.5),
+                                  ),
+                                ),
+                                focusedPinTheme: PinTheme(
+                                  width: 45,
+                                  height: 55,
+                                  textStyle: GoogleFonts.poppins(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: const Color(0xFFEA953B), width: 2.5),
+                                  ),
+                                ),
+                                onCompleted: (pin) {
+                                  _currentOtp = pin;
+                                  _isCodeComplete = true;
                                   _verifyOtp();
-                                }
-                              },
+                                },
+                                onChanged: (pin) {
+                                  setState(() {
+                                    _currentOtp = pin;
+                                    _isCodeComplete = pin.length == 6;
+                                  });
+                                },
+                              ),
                             ),
 
                             const SizedBox(height: 20),
                             Center(
                               child: SignupOtpTimerControl(
-                                onResend: () async {
-                                  setState(() => _isLoading = true);
-                                  try {
-                                    // Properly resend OTP using the new resendOTP service
-                                    await SupabaseService().resendOTP(
-                                      phone: widget.phone,
-                                      type: OtpType.signup,
-                                    );
-                                    if (mounted) {
-                                      setState(() => _isLoading = false);
-                                      ToknSnackBar.show(context, message: 'OTP Resent!', type: SnackBarType.success);
+                                  onResend: () async {
+                                    setState(() => _isLoading = true);
+                                    print('DEBUG: Requesting OTP resend for ${widget.phone}');
+                                    try {
+                                      // Properly resend OTP using the new resendOTP service
+                                      await SupabaseService().resendOTP(
+                                        phone: widget.phone,
+                                        type: OtpType.signup,
+                                      );
+                                      if (mounted) {
+                                        setState(() => _isLoading = false);
+                                        ToknSnackBar.show(context, message: 'OTP Resent!', type: SnackBarType.success);
+                                      }
+                                    } catch (e) {
+                                      print('DEBUG: Resend Error: $e');
+                                      if (mounted) {
+                                        setState(() => _isLoading = false);
+                                        ToknSnackBar.show(context, message: ErrorMapper.mapError(e.toString()));
+                                      }
                                     }
-                                  } catch (e) {
-                                    if (mounted) {
-                                      setState(() => _isLoading = false);
-                                      ToknSnackBar.show(context, message: e.toString());
-                                    }
-                                  }
-                                },
+                                  },
                               ),
                             ),
 
@@ -304,68 +343,3 @@ class _SignupOtpTimerControlState extends State<SignupOtpTimerControl> {
   }
 }
 
-class SignupOtpInputRow extends StatefulWidget {
-  final Function(bool, String) onChanged;
-  const SignupOtpInputRow({super.key, required this.onChanged});
-
-  @override
-  State<SignupOtpInputRow> createState() => _SignupOtpInputRowState();
-}
-
-class _SignupOtpInputRowState extends State<SignupOtpInputRow> {
-  final List<TextEditingController> _controllers = List.generate(6, (_) => TextEditingController());
-  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
-
-  @override
-  void dispose() {
-    for (var c in _controllers) {
-      c.dispose();
-    }
-    for (var n in _focusNodes) {
-      n.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: List.generate(6, (index) {
-        return SizedBox(
-          width: 45,
-          height: 55,
-          child: TextField(
-            controller: _controllers[index],
-            focusNode: _focusNodes[index],
-            textAlign: TextAlign.center,
-            keyboardType: TextInputType.number,
-            maxLength: 1,
-            style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold),
-            decoration: InputDecoration(
-              counterText: '',
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFEA953B), width: 1.5),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFEA953B), width: 2.5),
-              ),
-            ),
-            onChanged: (value) {
-              if (value.isNotEmpty && index < 5) {
-                _focusNodes[index + 1].requestFocus();
-              } else if (value.isEmpty && index > 0) {
-                _focusNodes[index - 1].requestFocus();
-              }
-
-              String code = _controllers.map((c) => c.text).join();
-              widget.onChanged(code.length == 6, code);
-            },
-          ),
-        );
-      }),
-    );
-  }
-}

@@ -319,24 +319,30 @@ class _SignupPageState extends State<SignupPage> {
                                                   if (mounted) {
                                                     setState(() => _isLoading = false);
                                                     if (result['success'] == true) {
-                                                      // On success, navigate to Home (or a Verify Email page if necessary)
-                                                      ToknSnackBar.show(context, message: 'Verification code sent to your phone!', type: SnackBarType.success);
-                                                      
-                                                      Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                          builder: (context) => SignupOtpPage(
-                                                            fullName: _nameController.text.trim(),
-                                                            email: _emailController.text.trim(),
-                                                            phone: formattedPhone,
-                                                            password: _passwordController.text,
+                                                      if (result['autoConfirmed'] == true) {
+                                                        ToknSnackBar.show(context, message: 'Registration Successful!', type: SnackBarType.success);
+                                                        Navigator.pushAndRemoveUntil(
+                                                          context,
+                                                          MaterialPageRoute(builder: (context) => const HomePage()),
+                                                          (route) => false,
+                                                        );
+                                                      } else {
+                                                        ToknSnackBar.show(context, message: 'Verification code sent to your phone!', type: SnackBarType.success);
+                                                        Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (context) => SignupOtpPage(
+                                                              fullName: _nameController.text.trim(),
+                                                              email: _emailController.text.trim(),
+                                                              phone: formattedPhone,
+                                                              password: _passwordController.text,
+                                                            ),
                                                           ),
-                                                        ),
-                                                      );
+                                                        );
+                                                      }
 
                                                     } else {
                                                       ToknSnackBar.show(context, message: result['message'] ?? 'Signup failed');
-
                                                     }
                                                   }
 
