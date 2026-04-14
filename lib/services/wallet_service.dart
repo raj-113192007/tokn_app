@@ -1,6 +1,8 @@
 // ignore_for_file: avoid_print, unused_local_variable, unused_element, use_build_context_synchronously, unused_field, file_names, constant_identifier_names, deprecated_member_use, unused_import
+import 'dart:io' show Platform;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:upi_india/upi_india.dart';
 
 class WalletService {
   final _supabase = Supabase.instance.client;
@@ -48,7 +50,38 @@ class WalletService {
     }
   }
 
-  // Initiate UPI Payment via URL Launcher
+  final UpiIndia _upiIndia = UpiIndia();
+
+  // Get available UPI apps (for Android)
+  Future<List<UpiApp>> getAvailableUpiApps() async {
+    try {
+      if (Platform.isAndroid) {
+        return await _upiIndia.getAllUpiApps(mandatoryTransactionId: false);
+      }
+    } catch (e) {
+      print('Error getting UPI apps: $e');
+    }
+    return [];
+  }
+
+  // Initiate UPI Payment via upi_india package (returns response)
+  Future<UpiResponse?> executeUpiTransaction({required UpiApp app, required double amount, String? note}) async {
+    try {
+      return await _upiIndia.startTransaction(
+        app: app,
+        receiverUpiId: receiverUpiId,
+        receiverName: receiverName,
+        transactionRefId: 'txn_${DateTime.now().millisecondsSinceEpoch}',
+        transactionNote: note ?? 'Token Booking',
+        amount: amount,
+      );
+    } catch (e) {
+      print('Error launching specific UPI: $e');
+      return null;
+    }
+  }
+
+  // Fallback for iOS or generic intent
   Future<bool> launchUpiPayment({required double amount, String? note}) async {
     // Create the UPI URI with proper encoding for all parameters
     final Map<String, String> queryParams = {

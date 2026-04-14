@@ -8,6 +8,7 @@ import 'widgets/animation_utils.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'widgets/tokn_snackbar.dart';
 import 'settings_page.dart';
+import 'package:upi_india/upi_india.dart';
 
 
 class WalletPage extends StatefulWidget {
@@ -194,11 +195,9 @@ class _WalletPageState extends State<WalletPage> {
               const SizedBox(width: 15),
               Expanded(
                 child: _buildBalanceAction(
-                  icon: Icons.send_rounded,
-                  label: 'Pay Hospital',
-                  onTap: () {
-                    ToknSnackBar.show(context, message: 'Select a hospital from home to pay.');
-                  },
+                  icon: Icons.account_balance,
+                  label: 'Withdraw',
+                  onTap: _showWithdrawDialog,
                 ),
               ),
             ],
@@ -350,11 +349,11 @@ class _WalletPageState extends State<WalletPage> {
             ),
             onPressed: () {
               final amount = double.tryParse(amountController.text);
-              if (amount != null && amount > 0) {
+              if (amount != null && amount >= 1) {
                 Navigator.pop(context);
-                _selectUpiApp(amount);
+                _processRecharge(amount);
               } else {
-                ToknSnackBar.show(context, message: 'Please enter a valid amount');
+                ToknSnackBar.show(context, message: 'Minimum recharge amount is ₹1');
               }
             },
             child: const Text('Proceed', style: TextStyle(color: Colors.white)),
@@ -364,25 +363,210 @@ class _WalletPageState extends State<WalletPage> {
     );
   }
 
-  void _selectUpiApp(double amount) async {
-    final success = await _walletService.launchUpiPayment(
-      amount: amount,
-      note: 'Wallet Recharge'
-    );
-
-    if (success && mounted) {
-      // For personal UPI IDs, we finalize immediately as we can't track real-time bank status
-      final successFinal = await _walletService.finalizeRecharge(
+  Future<void> _processRecharge(double amount) async {
+    final upiApps = await _walletService.getAvailableUpiApps();
+    
+    if (upiApps.isNotEmpty && mounted) {
+      _showUpiAppSelector(upiApps, amount);
+    } else {
+      // Fallback for iOS / No apps
+      final success = await _walletService.launchUpiPayment(
         amount: amount,
-        txnId: 'TOK-${DateTime.now().millisecondsSinceEpoch}',
-        responseCode: '00',
+        note: 'Wallet Recharge'
       );
-      if (successFinal && mounted) {
-        ToknSnackBar.show(context, message: 'Wallet recharged successfully!', type: SnackBarType.success);
-        _refreshData();
+      if (success && mounted) {
+        _showUpiConfirmation(amount);
+      } else if (mounted) {
+        ToknSnackBar.show(context, message: 'Could not open UPI apps');
       }
+    }
+  }
+
+  void _showUpiAppSelector(List<UpiApp> apps, double amount) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Select UPI App for Recharge', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 15),
+            Wrap(
+              spacing: 20,
+              runSpacing: 20,
+              children: apps.map<Widget>((app) {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                    _executeUpiIntent(app, amount);
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.memory(app.icon, width: 45, height: 45),
+                      const SizedBox(height: 5),
+                      Text(app.name, style: GoogleFonts.poppins(fontSize: 11)),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _executeUpiIntent(UpiApp app, double amount) async {
+    showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
+    final response = await _walletService.executeUpiTransaction(app: app, amount: amount, note: 'Wallet Recharge');
+    if (mounted) Navigator.pop(context); // Close loading
+
+    if (response != null) {
+      if (response.status == UpiPaymentStatus.SUCCESS || response.status == UpiPaymentStatus.SUBMITTED) {
+         _finalizeRecharge(amount);
+      } else {
+        String msg = 'Payment Failed or Cancelled';
+        if (response.status == UpiPaymentStatus.FAILURE) msg = 'Payment Failed';
+        ToknSnackBar.show(context, message: msg);
+      }
+    } else {
+      ToknSnackBar.show(context, message: 'Could not process payment');
+    }
+  }
+
+  void _showUpiConfirmation(double amount) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Confirm Recharge', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        content: Text('Did you complete the recharge of ₹$amount successfully via UPI?', style: GoogleFonts.poppins()),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel', style: GoogleFonts.poppins(color: Colors.grey))),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _finalizeRecharge(amount);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E4C9D)),
+            child: Text('Yes, Recharge', style: GoogleFonts.poppins(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _finalizeRecharge(double amount) async {
+    showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
+    final successFinal = await _walletService.finalizeRecharge(
+      amount: amount,
+      txnId: 'TOK-${DateTime.now().millisecondsSinceEpoch}',
+      responseCode: '00',
+    );
+    if (mounted) Navigator.pop(context); // loading
+
+    if (successFinal && mounted) {
+      ToknSnackBar.show(context, message: 'Wallet recharged successfully!', type: SnackBarType.success);
+      _refreshData();
     } else if (mounted) {
-      ToknSnackBar.show(context, message: 'Could not open UPI apps');
+      ToknSnackBar.show(context, message: 'Failed to update wallet balance');
+    }
+  }
+
+  void _showWithdrawDialog() {
+    final TextEditingController amountController = TextEditingController();
+    final TextEditingController upiController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Withdraw Money', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Available Balance: ₹${_balance.toStringAsFixed(2)}', style: GoogleFonts.poppins(fontSize: 13, color: Colors.blue[800])),
+              const SizedBox(height: 15),
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Amount to Withdraw',
+                  prefixText: '₹ ',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 15),
+              TextField(
+                controller: upiController,
+                decoration: InputDecoration(
+                  labelText: 'Your UPI ID / Account',
+                  hintText: 'e.g. name@okhdfcbank',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2E4C9D),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              final amount = double.tryParse(amountController.text);
+              final upiId = upiController.text.trim();
+
+              if (amount == null || amount < 10) {
+                ToknSnackBar.show(context, message: 'Minimum withdrawal is ₹10');
+                return;
+              }
+              if (amount > _balance) {
+                ToknSnackBar.show(context, message: 'Insufficient balance');
+                return;
+              }
+              if (upiId.isEmpty) {
+                ToknSnackBar.show(context, message: 'Please enter a valid UPI ID');
+                return;
+              }
+              
+              Navigator.pop(context);
+              _processWithdrawal(amount, upiId);
+            },
+            child: const Text('Withdraw', style: TextStyle(color: Colors.white)),
+          )
+        ],
+      ),
+    );
+  }
+
+  void _processWithdrawal(double amount, String upiId) async {
+    showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
+    
+    final result = await _walletService.deductBalance(
+      amount: amount,
+      description: 'Withdrawal to $upiId',
+    );
+    
+    if (mounted) Navigator.pop(context);
+    
+    if (mounted) {
+      if (result['success'] == true) {
+        ToknSnackBar.show(context, message: 'Withdrawal request submitted successfully!', type: SnackBarType.success);
+        _refreshData();
+      } else {
+        ToknSnackBar.show(context, message: result['message'] ?? 'Failed to process withdrawal');
+      }
     }
   }
 
