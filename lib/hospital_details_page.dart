@@ -11,7 +11,6 @@ import 'services/supabase_service.dart';
 import 'services/wallet_service.dart';
 import 'widgets/tokn_snackbar.dart';
 import 'services/notification_service.dart';
-import 'package:upi_india/upi_india.dart'; // Added for UPI check
 
 
 class HospitalDetailsPage extends StatefulWidget {
@@ -753,13 +752,21 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
   Future<void> _processUpiPayment(String type, double price, String patientName, String description) async {
     if (_isProcessingBooking) return;
     
-    // First try the native intent via upi_india (Android)
-    final upiApps = await _walletService.getAvailableUpiApps();
+    showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
     
-    if (upiApps.isNotEmpty && mounted) {
-      _showUpiAppSelector(upiApps, type, price, patientName, description);
+    final response = await _walletService.launchNativeUpi(
+      amount: price,
+      note: '$type Booking Payment'
+    );
+    
+    if (mounted) Navigator.pop(context);
+
+    if (response != null && (response.toLowerCase().contains("status=success") || response.toLowerCase().contains("status=submitted"))) {
+      _finalizeBooking(type, price, patientName, description);
+    } else if (response != null) {
+      ToknSnackBar.show(context, message: 'Payment Failed or Cancelled');
     } else {
-      // Fallback for iOS or generic link
+      // Fallback
       final success = await _walletService.launchUpiPayment(
         amount: price,
         note: '$type Booking Payment'
@@ -770,66 +777,6 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
       } else if (mounted) {
         ToknSnackBar.show(context, message: 'Could not open UPI apps');
       }
-    }
-  }
-
-  void _showUpiAppSelector(List<UpiApp> apps, String type, double price, String patientName, String description) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Select UPI App', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 15),
-            Wrap(
-              spacing: 20,
-              runSpacing: 20,
-              children: apps.map<Widget>((app) {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                    _executeUpiIntent(app, type, price, patientName, description);
-                  },
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Image.memory(app.icon, width: 45, height: 45),
-                      const SizedBox(height: 5),
-                      Text(app.name, style: GoogleFonts.poppins(fontSize: 11)),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _executeUpiIntent(UpiApp app, String type, double price, String patientName, String description) async {
-    showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
-    final response = await _walletService.executeUpiTransaction(app: app, amount: price, note: '$type Booking');
-    if (mounted) Navigator.pop(context); // Close loading
-
-    if (response != null) {
-      if (response.status == UpiPaymentStatus.SUCCESS) {
-        _finalizeBooking(type, price, patientName, description);
-      } else if (response.status == UpiPaymentStatus.SUBMITTED) {
-        // Handled as success in most workflows initially, or wait
-        _finalizeBooking(type, price, patientName, description);
-      } else {
-        String msg = 'Payment Failed or Cancelled';
-        if (response.status == UpiPaymentStatus.FAILURE) msg = 'Payment Failed';
-        ToknSnackBar.show(context, message: msg);
-      }
-    } else {
-      ToknSnackBar.show(context, message: 'Could not process payment');
     }
   }
 

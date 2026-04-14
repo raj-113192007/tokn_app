@@ -8,8 +8,6 @@ import 'widgets/animation_utils.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'widgets/tokn_snackbar.dart';
 import 'settings_page.dart';
-import 'package:upi_india/upi_india.dart';
-
 
 class WalletPage extends StatefulWidget {
   const WalletPage({super.key});
@@ -364,10 +362,20 @@ class _WalletPageState extends State<WalletPage> {
   }
 
   Future<void> _processRecharge(double amount) async {
-    final upiApps = await _walletService.getAvailableUpiApps();
+    showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
     
-    if (upiApps.isNotEmpty && mounted) {
-      _showUpiAppSelector(upiApps, amount);
+    // Launch Android native chooser
+    final response = await _walletService.launchNativeUpi(
+      amount: amount,
+      note: 'Wallet Recharge'
+    );
+    
+    if (mounted) Navigator.pop(context); // Close loading
+
+    if (response != null && (response.toLowerCase().contains("status=success") || response.toLowerCase().contains("status=submitted"))) {
+      _finalizeRecharge(amount);
+    } else if (response != null) {
+      ToknSnackBar.show(context, message: 'Payment Failed or Cancelled');
     } else {
       // Fallback for iOS / No apps
       final success = await _walletService.launchUpiPayment(
@@ -379,63 +387,6 @@ class _WalletPageState extends State<WalletPage> {
       } else if (mounted) {
         ToknSnackBar.show(context, message: 'Could not open UPI apps');
       }
-    }
-  }
-
-  void _showUpiAppSelector(List<UpiApp> apps, double amount) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Select UPI App for Recharge', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 15),
-            Wrap(
-              spacing: 20,
-              runSpacing: 20,
-              children: apps.map<Widget>((app) {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                    _executeUpiIntent(app, amount);
-                  },
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Image.memory(app.icon, width: 45, height: 45),
-                      const SizedBox(height: 5),
-                      Text(app.name, style: GoogleFonts.poppins(fontSize: 11)),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _executeUpiIntent(UpiApp app, double amount) async {
-    showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
-    final response = await _walletService.executeUpiTransaction(app: app, amount: amount, note: 'Wallet Recharge');
-    if (mounted) Navigator.pop(context); // Close loading
-
-    if (response != null) {
-      if (response.status == UpiPaymentStatus.SUCCESS || response.status == UpiPaymentStatus.SUBMITTED) {
-         _finalizeRecharge(amount);
-      } else {
-        String msg = 'Payment Failed or Cancelled';
-        if (response.status == UpiPaymentStatus.FAILURE) msg = 'Payment Failed';
-        ToknSnackBar.show(context, message: msg);
-      }
-    } else {
-      ToknSnackBar.show(context, message: 'Could not process payment');
     }
   }
 

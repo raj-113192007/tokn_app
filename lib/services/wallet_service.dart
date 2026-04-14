@@ -2,7 +2,7 @@
 import 'dart:io' show Platform;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:upi_india/upi_india.dart';
+import 'package:flutter/services.dart';
 
 class WalletService {
   final _supabase = Supabase.instance.client;
@@ -50,35 +50,29 @@ class WalletService {
     }
   }
 
-  final UpiIndia _upiIndia = UpiIndia();
+  static const platform = MethodChannel('tokn.upi/payment');
 
-  // Get available UPI apps (for Android)
-  Future<List<UpiApp>> getAvailableUpiApps() async {
+  // Launch UPI via Native Android MethodChannel
+  Future<String?> launchNativeUpi({required double amount, String? note}) async {
+    final Map<String, String> queryParams = {
+      'pa': receiverUpiId,
+      'pn': receiverName,
+      'am': amount.toStringAsFixed(2),
+      'cu': 'INR',
+    };
+    if (note != null && note.isNotEmpty) queryParams['tn'] = note;
+
+    final Uri uri = Uri(scheme: 'upi', host: 'pay', queryParameters: queryParams);
+
     try {
       if (Platform.isAndroid) {
-        return await _upiIndia.getAllUpiApps(mandatoryTransactionId: false);
+        final String? result = await platform.invokeMethod('launchUpi', uri.toString());
+        return result; // Usually returns something containing "Status=Success"
       }
-    } catch (e) {
-      print('Error getting UPI apps: $e');
+    } on PlatformException catch (e) {
+      print("Failed to launch native UPI: '${e.message}'.");
     }
-    return [];
-  }
-
-  // Initiate UPI Payment via upi_india package (returns response)
-  Future<UpiResponse?> executeUpiTransaction({required UpiApp app, required double amount, String? note}) async {
-    try {
-      return await _upiIndia.startTransaction(
-        app: app,
-        receiverUpiId: receiverUpiId,
-        receiverName: receiverName,
-        transactionRefId: 'txn_${DateTime.now().millisecondsSinceEpoch}',
-        transactionNote: note ?? 'Token Booking',
-        amount: amount,
-      );
-    } catch (e) {
-      print('Error launching specific UPI: $e');
-      return null;
-    }
+    return null;
   }
 
   // Fallback for iOS or generic intent
