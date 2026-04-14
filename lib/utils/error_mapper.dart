@@ -32,7 +32,11 @@ class ErrorMapper {
     }
 
     if (lowerError.contains('sms_provider_error') || 
-        lowerError.contains('sms provider error')) {
+        lowerError.contains('sms provider error') ||
+        lowerError.contains('sms_send_failed')) {
+      if (lowerError.contains('trial accounts cannot send messages to unverified numbers')) {
+        return "System is using a Twilio Trial account. Cannot send OTP to unverified numbers.";
+      }
       return "SMS service is temporarily unavailable. Please try again later or contact support.";
     }
 

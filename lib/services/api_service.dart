@@ -50,38 +50,13 @@ class ApiService {
 
       print('DEBUG_FLOW: Attempting signup for $formattedPhone');
 
-      // Use signUpWithPhone - strictly for new registrations
-      final response = await SupabaseService().signUpWithPhone(
+      // Use signInWithOtp instead of signUp to guarantee OTP delivery, 
+      // preventing silent failures if the user was partially created in Auth.
+      await SupabaseService().signInWithOtp(
         phone: formattedPhone,
-        password: password,
-        fullName: fullName,
       );
-
-      print('DEBUG_FLOW: Response - UserID: ${response.user?.id}, Session: ${response.session != null}');
-
-      // If session is not null, it means the account was auto-confirmed
-      if (response.session != null) {
-        return {
-          'success': true,
-          'autoConfirmed': true,
-          'message': 'Signup successful!',
-        };
-      }
-
-      // FALLBACK: If user was created but no session (needs verification), 
-      // explicitly call resend to be 100% sure the SMS is triggered.
-      if (response.user != null) {
-        print('DEBUG_FLOW: Triggering explicit resend to ensure SMS dispatch...');
-        try {
-          await SupabaseService().resendOTP(
-            phone: formattedPhone,
-            type: OtpType.signup,
-          );
-        } catch (resendError) {
-          print('DEBUG_FLOW: Non-fatal resend error: $resendError');
-          // We continue since the signUp might have already sent it
-        }
-      }
+      
+      print('DEBUG_FLOW: signInWithOtp completed for $formattedPhone');
 
       return {
         'success': true,
@@ -182,7 +157,7 @@ class ApiService {
       final response = await SupabaseService().verifyOTP(
         phone: formattedPhone,
         token: otp,
-        type: OtpType.signup, // Changed from sms to signup
+        type: OtpType.sms, // Fixed to use sms type for phone verification
       );
 
       if (response.user != null) {
@@ -191,6 +166,7 @@ class ApiService {
         try {
           await SupabaseService().updateUser(
             email: email,
+            password: password,
           );
         } catch (e) {
           final errorStr = e.toString().toLowerCase();
