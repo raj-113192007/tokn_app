@@ -152,7 +152,6 @@ class _SignupOtpPageState extends State<SignupOtpPage> {
                             Center(
                               child: Pinput(
                                 length: 6,
-                                androidSmsAutofillMethod: AndroidSmsAutofillMethod.smsUserConsentApi,
                                 autofillHints: const [AutofillHints.oneTimeCode],
                                 defaultPinTheme: PinTheme(
                                   width: 45,
