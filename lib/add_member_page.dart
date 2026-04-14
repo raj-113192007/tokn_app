@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print, unused_local_variable, unused_element, use_build_context_synchronously, unused_field, file_names, constant_identifier_names, deprecated_member_use, unused_import
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tokn/l10n/app_localizations.dart';
@@ -143,7 +144,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF2E4C9D).withOpacity(0.6),
+                    color: const Color(0xFF2E4C9D).withValues(alpha: 0.6),
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -413,7 +414,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
           Switch(
             value: _enableBookingAccess,
             onChanged: (v) => setState(() => _enableBookingAccess = v),
-            activeColor: const Color(0xFF389B66),
+            activeThumbColor: const Color(0xFF389B66),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -456,7 +457,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF2E4C9D).withOpacity(0.3),
+              color: const Color(0xFF2E4C9D).withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -487,7 +488,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
         decoration: BoxDecoration(
           color: const Color(0xFFF2F6FE),
           borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: const Color(0xFF2E4C9D).withOpacity(0.1)),
+          border: Border.all(color: const Color(0xFF2E4C9D).withValues(alpha: 0.1)),
         ),
         child: Center(
           child: Row(

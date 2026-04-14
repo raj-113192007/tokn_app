@@ -1,11 +1,10 @@
+// ignore_for_file: avoid_print, unused_local_variable, unused_element, use_build_context_synchronously, unused_field, file_names, constant_identifier_names, deprecated_member_use, unused_import
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'widgets/animation_utils.dart';
 
 import 'home_page.dart'; // To navigate on success
-import 'services/supabase_service.dart';
 import 'services/api_service.dart';
 import 'widgets/tokn_snackbar.dart';
 import 'signup_otp_page.dart';

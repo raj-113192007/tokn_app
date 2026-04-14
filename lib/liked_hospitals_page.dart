@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print, unused_local_variable, unused_element, use_build_context_synchronously, unused_field, file_names, constant_identifier_names, deprecated_member_use, unused_import
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'hospital_details_page.dart';
@@ -107,7 +108,7 @@ class _LikedHospitalsPageState extends State<LikedHospitalsPage> {
               decoration: BoxDecoration(
                 color: const Color(0xFFF7F8FC),
                 borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
               ),
               child: TextField(
                 controller: _searchController,
@@ -198,12 +199,12 @@ class _LikedHospitalsPageState extends State<LikedHospitalsPage> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
-          border: Border.all(color: Colors.grey.withOpacity(0.1)),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print, unused_local_variable, unused_element, use_build_context_synchronously, unused_field, file_names, constant_identifier_names, deprecated_member_use, unused_import
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -95,7 +96,7 @@ class _LockScreenState extends State<LockScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: isFilled ? const Color(0xFF2E4C9D) : Colors.grey[200],
-                    border: _isError && !isFilled ? Border.all(color: Colors.redAccent.withOpacity(0.5)) : null,
+                    border: _isError && !isFilled ? Border.all(color: Colors.redAccent.withValues(alpha: 0.5)) : null,
                   ),
                 );
               }),

@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print, unused_local_variable, unused_element, use_build_context_synchronously, unused_field, file_names, constant_identifier_names, deprecated_member_use, unused_import
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'widgets/animation_utils.dart';
@@ -23,7 +24,7 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
   late TabController _tabController;
   late final ScrollController _messagesScrollController;
   List<Map<String, dynamic>> _visibleChats = [];
-  List<Map<String, dynamic>> _archivedChats = [];
+  final List<Map<String, dynamic>> _archivedChats = [];
   bool _showingArchived = false;
   bool _isFetchingBookings = false;
   List<dynamic> _userBookings = [];

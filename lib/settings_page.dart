@@ -1,15 +1,13 @@
+// ignore_for_file: avoid_print, unused_local_variable, unused_element, use_build_context_synchronously, unused_field, file_names, constant_identifier_names, deprecated_member_use, unused_import
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tokn/l10n/app_localizations.dart';
 
 import 'package:provider/provider.dart';
 
 import 'package:tokn/services/language_provider.dart';
 import 'widgets/animation_utils.dart';
-import 'services/api_service.dart';
 import 'services/supabase_service.dart';
-import 'profile_page.dart';
 import 'complete_profile_page.dart';
 import 'welcome_page.dart';
 import 'widgets/tokn_snackbar.dart';
@@ -282,7 +280,7 @@ class _SettingsPageState extends State<SettingsPage> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.grey.withOpacity(0.08)),
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.08)),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           child: Row(
@@ -339,7 +337,7 @@ class _SettingsPageState extends State<SettingsPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.grey.withOpacity(0.08)),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.08)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         child: SwitchListTile(
@@ -370,7 +368,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           value: value,
           onChanged: onChanged,
-          activeColor: const Color(0xFF2E4C9D),
+          activeThumbColor: const Color(0xFF2E4C9D),
         ),
       ),
     );
@@ -423,9 +421,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.redAccent.withOpacity(0.12),
+                        color: Colors.redAccent.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
+                        border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
                       ),
                       child: Text(
                         AppLocalizations.of(context)!.finishNow,
@@ -464,7 +462,7 @@ class _SettingsPageState extends State<SettingsPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.redAccent.withOpacity(0.35)),
+          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.35)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 14),
         child: Row(
@@ -493,9 +491,9 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Container(
         height: 46,
         decoration: BoxDecoration(
-          color: Colors.redAccent.withOpacity(0.08),
+          color: Colors.redAccent.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.redAccent.withOpacity(0.2)),
+          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.2)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 14),
         child: Row(

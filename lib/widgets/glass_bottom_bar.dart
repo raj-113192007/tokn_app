@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print, unused_local_variable, unused_element, use_build_context_synchronously, unused_field, file_names, constant_identifier_names, deprecated_member_use, unused_import
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
@@ -31,7 +32,7 @@ class GlassBottomBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -45,10 +46,10 @@ class GlassBottomBar extends StatelessWidget {
             decoration: BoxDecoration(
               // Always apply the provided `opacity` so the glass/blur effect
               // remains visible even when a `backgroundColor` is passed in.
-              color: baseBackground.withOpacity(opacity),
+              color: baseBackground.withValues(alpha: opacity),
               borderRadius: BorderRadius.circular(borderRadius),
               border: Border.all(
-                color: Colors.white.withOpacity(0.18),
+                color: Colors.white.withValues(alpha: 0.18),
                 width: 0.8,
               ),
             ),

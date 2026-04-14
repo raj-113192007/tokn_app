@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print, unused_local_variable, unused_element, use_build_context_synchronously, unused_field, file_names, constant_identifier_names, deprecated_member_use, unused_import
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tokn/l10n/app_localizations.dart';
@@ -53,7 +54,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
             padding: const EdgeInsets.only(right: 16),
             child: CircleAvatar(
               radius: 16,
-              backgroundColor: const Color(0xFF2E4C9D).withOpacity(0.1),
+              backgroundColor: const Color(0xFF2E4C9D).withValues(alpha: 0.1),
               child: Text(
                 'JD',
                 style: GoogleFonts.poppins(
@@ -76,7 +77,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF2E4C9D).withOpacity(0.6),
+                color: const Color(0xFF2E4C9D).withValues(alpha: 0.6),
                 letterSpacing: 1.2,
               ),
             ),
@@ -274,7 +275,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF2E4C9D).withOpacity(0.3),
+              color: const Color(0xFF2E4C9D).withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),

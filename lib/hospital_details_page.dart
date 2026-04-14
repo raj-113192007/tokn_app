@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print, unused_local_variable, unused_element, use_build_context_synchronously, unused_field, file_names, constant_identifier_names, deprecated_member_use, unused_import
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'widgets/animation_utils.dart';
@@ -157,7 +158,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF4CAF50).withOpacity(0.9),
+                      color: const Color(0xFF4CAF50).withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -247,7 +248,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
+                          color: Colors.black.withValues(alpha: 0.03),
                           blurRadius: 10,
                           offset: const Offset(0, 5),
                         ),
@@ -260,7 +261,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF2E4C9D).withOpacity(0.1),
+                                color: const Color(0xFF2E4C9D).withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(Icons.location_on, color: Color(0xFF2E4C9D)),
@@ -515,7 +516,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.3),
+              color: color.withValues(alpha: 0.3),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -535,7 +536,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
             Text(
               price,
               style: GoogleFonts.poppins(
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
                 fontSize: 12,
               ),
             ),
@@ -614,7 +615,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                 contentPadding: EdgeInsets.zero,
                 leading: Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: const Color(0xFF2E4C9D).withOpacity(0.1), shape: BoxShape.circle),
+                  decoration: BoxDecoration(color: const Color(0xFF2E4C9D).withValues(alpha: 0.1), shape: BoxShape.circle),
                   child: const Icon(Icons.person_outline, color: Color(0xFF2E4C9D)),
                 ),
                 title: Text(AppLocalizations.of(context)!.bookMyself, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
@@ -636,7 +637,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                     contentPadding: EdgeInsets.zero,
                     leading: Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), shape: BoxShape.circle),
+                      decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.1), shape: BoxShape.circle),
                       child: const Icon(Icons.people_outline, color: Colors.orange),
                     ),
                     title: Text(member['full_name'] ?? 'Family Member', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
@@ -647,7 +648,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                       _handleBooking(context, type, price, member['full_name'], _problemController.text);
                     },
                   ),
-                )).toList(),
+                )),
               ] else if (!_isLoadingFamily) 
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 10),

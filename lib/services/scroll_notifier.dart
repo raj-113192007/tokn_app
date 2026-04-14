@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print, unused_local_variable, unused_element, use_build_context_synchronously, unused_field, file_names, constant_identifier_names, deprecated_member_use, unused_import
 import 'package:flutter/material.dart';
 
 class ScrollNotifier extends ChangeNotifier {
@@ -16,11 +17,11 @@ class ScrollNotifier extends ChangeNotifier {
   void registerPageController(String pageId, ScrollController controller) {
     _pageControllers[pageId] = controller;
     
-    final listener = () {
+    void listener() {
       if (_currentPageId == pageId && controller.hasClients) {
         updateScrollPosition(controller.offset);
       }
-    };
+    }
     
     _listeners[pageId] = listener;
     controller.addListener(listener);

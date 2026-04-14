@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print, unused_local_variable, unused_element, use_build_context_synchronously, unused_field, file_names, constant_identifier_names, deprecated_member_use, unused_import
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tokn/l10n/app_localizations.dart';
@@ -147,7 +148,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               border: Border.all(color: const Color(0xFFF2F6FE), width: 6),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 15,
                   offset: const Offset(0, 5),
                 ),
@@ -184,7 +185,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   border: Border.all(color: Colors.white, width: 3),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF2E4C9D).withOpacity(0.3),
+                      color: const Color(0xFF2E4C9D).withValues(alpha: 0.3),
                       blurRadius: 10,
                       offset: const Offset(0, 3),
                     ),
@@ -227,7 +228,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
-            color: const Color(0xFFF7F9FC).withOpacity(0.8),
+            color: const Color(0xFFF7F9FC).withValues(alpha: 0.8),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFF2F6FE)),
           ),
@@ -304,7 +305,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF2E4C9D).withOpacity(0.3),
+              color: const Color(0xFF2E4C9D).withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),

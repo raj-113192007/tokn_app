@@ -1,4 +1,4 @@
-import 'dart:ui';
+// ignore_for_file: avoid_print, unused_local_variable, unused_element, use_build_context_synchronously, unused_field, file_names, constant_identifier_names, deprecated_member_use, unused_import
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -549,7 +549,7 @@ class _HomePageState extends State<HomePage> {
                                 end: Alignment.bottomCenter,
                                 colors: [
                                   Colors.transparent,
-                                  Colors.black.withOpacity(0.5),
+                                  Colors.black.withValues(alpha: 0.5),
                                 ],
                               ),
                             ),
@@ -816,7 +816,7 @@ class _HomePageState extends State<HomePage> {
               decoration: BoxDecoration(
                 color: Colors.grey[200],
                 borderRadius: BorderRadius.circular(15),
-                image: (imageUrl != null && imageUrl.isNotEmpty)
+                image: (imageUrl.isNotEmpty)
                   ? DecorationImage(
                       image: NetworkImage(imageUrl),
                       fit: BoxFit.cover,
@@ -824,7 +824,7 @@ class _HomePageState extends State<HomePage> {
                   : null,
                 boxShadow: [
                    BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 5,
                     offset: const Offset(0, 3),
                    )
@@ -863,7 +863,7 @@ class _HomePageState extends State<HomePage> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(15),
-              image: (imageUrl != null && imageUrl.isNotEmpty)
+              image: (imageUrl.isNotEmpty)
                 ? DecorationImage(
                     image: NetworkImage(imageUrl),
                     fit: BoxFit.cover,
@@ -872,7 +872,7 @@ class _HomePageState extends State<HomePage> {
               border: Border.all(color: Colors.grey.shade200),
                boxShadow: [
                  BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 5,
                   offset: const Offset(0, 3),
                  )
@@ -932,7 +932,7 @@ class _HomePageState extends State<HomePage> {
                 vertical: 10,
               ),
               decoration: BoxDecoration(
-                color: isActive ? Colors.white.withOpacity(0.24) : Colors.transparent,
+                color: isActive ? Colors.white.withValues(alpha: 0.24) : Colors.transparent,
                 borderRadius: BorderRadius.circular(100),
               ),
               child: Row(

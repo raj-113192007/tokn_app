@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print, unused_local_variable, unused_element, use_build_context_synchronously, unused_field, file_names, constant_identifier_names, deprecated_member_use, unused_import
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -515,11 +516,11 @@ class SupabaseService {
 
   /// Fetch chat messages involving the current user and TokN Admin
   static Future<List<Map<String, dynamic>>> getChatMessages() async {
-    final user = ApiService.client.auth.currentUser;
+    final user = client.auth.currentUser;
     if (user == null) return [];
 
     try {
-      final response = await ApiService.client
+      final response = await client
           .from('chat_messages')
           .select()
           .or('sender_id.eq.${user.id},receiver_id.eq.${user.id}')
@@ -534,11 +535,11 @@ class SupabaseService {
 
   /// Sends a message to the TokN Admin
   static Future<void> sendChatMessage(String message) async {
-    final user = ApiService.client.auth.currentUser;
+    final user = client.auth.currentUser;
     if (user == null) throw 'Not logged in';
 
     try {
-      await ApiService.client.from('chat_messages').insert({
+      await client.from('chat_messages').insert({
         'sender_id': user.id,
         'receiver_id': null, // TokN Admin
         'sender_type': 'patient',

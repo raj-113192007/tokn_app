@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print, unused_local_variable, unused_element, use_build_context_synchronously, unused_field, file_names, constant_identifier_names, deprecated_member_use, unused_import
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tokn/l10n/app_localizations.dart';
@@ -169,7 +170,7 @@ class _FamilyMembersPageState extends State<FamilyMembersPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -328,12 +329,12 @@ class _FamilyMembersPageState extends State<FamilyMembersPage> {
         decoration: BoxDecoration(
           color: isLimitReached 
               ? Colors.grey[100] 
-              : const Color(0xFFF2F6FE).withOpacity(0.5),
+              : const Color(0xFFF2F6FE).withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isLimitReached 
                 ? Colors.grey[300]! 
-                : const Color(0xFF2E4C9D).withOpacity(0.2),
+                : const Color(0xFF2E4C9D).withValues(alpha: 0.2),
           ),
         ),
         child: Column(
@@ -391,7 +392,7 @@ class _FamilyMembersPageState extends State<FamilyMembersPage> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),

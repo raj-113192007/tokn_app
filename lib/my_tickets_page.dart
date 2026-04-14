@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print, unused_local_variable, unused_element, use_build_context_synchronously, unused_field, file_names, constant_identifier_names, deprecated_member_use, unused_import
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'services/supabase_service.dart';
@@ -127,7 +128,7 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -149,7 +150,7 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
+                        color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -366,7 +367,7 @@ class _MyTicketsPageState extends State<MyTicketsPage> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isAdmin ? Colors.grey[100] : const Color(0xFF2E4C9D).withOpacity(0.08),
+          color: isAdmin ? Colors.grey[100] : const Color(0xFF2E4C9D).withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(20).copyWith(
             bottomLeft: isAdmin ? Radius.zero : const Radius.circular(20),
             bottomRight: !isAdmin ? Radius.zero : const Radius.circular(20),

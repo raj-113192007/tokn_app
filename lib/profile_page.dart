@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print, unused_local_variable, unused_element, use_build_context_synchronously, unused_field, file_names, constant_identifier_names, deprecated_member_use, unused_import
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -14,7 +15,6 @@ import 'services/security_service.dart';
 import 'wallet_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'services/supabase_service.dart';
-import 'dart:io';
 import 'widgets/tokn_snackbar.dart';
 
 
@@ -36,7 +36,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String _age = 'Not Set';
   String _bloodGroup = 'Not Set';
   String _customId = 'Pending';
-  String _tokensBooked = '0';
+  final String _tokensBooked = '0';
   int _familyMemberCount = 0;
   bool _isEmailVerified = false;
 
@@ -229,7 +229,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             border: Border.all(color: Colors.white, width: 4),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 10,
                                 offset: const Offset(0, 5),
                               )
@@ -250,7 +250,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         Positioned.fill(
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(alpha: 0.3),
                               shape: BoxShape.circle,
                             ),
                             child: const Center(
@@ -305,13 +305,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 6),
                   decoration: BoxDecoration(
                     color: _isProfileComplete 
-                        ? Colors.green.withOpacity(0.12) 
-                        : Colors.redAccent.withOpacity(0.12),
+                        ? Colors.green.withValues(alpha: 0.12) 
+                        : Colors.redAccent.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: _isProfileComplete 
-                          ? Colors.green.withOpacity(0.3) 
-                          : Colors.redAccent.withOpacity(0.3),
+                          ? Colors.green.withValues(alpha: 0.3) 
+                          : Colors.redAccent.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -352,7 +352,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         borderRadius: BorderRadius.circular(25),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF2E4C9D).withOpacity(0.3),
+                            color: const Color(0xFF2E4C9D).withValues(alpha: 0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           )
@@ -435,7 +435,7 @@ class _ProfilePageState extends State<ProfilePage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
@@ -477,7 +477,7 @@ class _ProfilePageState extends State<ProfilePage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
@@ -539,7 +539,7 @@ class _ProfilePageState extends State<ProfilePage> {
               onPressed: onVerify,
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                backgroundColor: const Color(0xFF2E4C9D).withOpacity(0.1),
+                backgroundColor: const Color(0xFF2E4C9D).withValues(alpha: 0.1),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: Text(
@@ -567,7 +567,7 @@ class _ProfilePageState extends State<ProfilePage> {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.green.withOpacity(0.2)),
+        border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -712,7 +712,7 @@ class _ProfilePageState extends State<ProfilePage> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 15,
             offset: const Offset(0, 5),
           )

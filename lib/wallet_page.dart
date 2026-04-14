@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print, unused_local_variable, unused_element, use_build_context_synchronously, unused_field, file_names, constant_identifier_names, deprecated_member_use, unused_import
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -5,7 +6,6 @@ import 'services/security_service.dart';
 import 'services/wallet_service.dart';
 import 'widgets/animation_utils.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'widgets/tokn_snackbar.dart';
 import 'widgets/tokn_snackbar.dart';
 import 'settings_page.dart';
 
@@ -114,7 +114,7 @@ class _WalletPageState extends State<WalletPage> {
                           ),
                         )
                       else
-                        ..._history.map((tx) => _buildTransactionItem(tx)).toList(),
+                        ..._history.map((tx) => _buildTransactionItem(tx)),
                     ],
                   ),
                 ),
@@ -137,7 +137,7 @@ class _WalletPageState extends State<WalletPage> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2E4C9D).withOpacity(0.3),
+            color: const Color(0xFF2E4C9D).withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
           )
@@ -152,7 +152,7 @@ class _WalletPageState extends State<WalletPage> {
               Text(
                 'Available Balance',
                 style: GoogleFonts.poppins(
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                   fontSize: 14,
                 ),
               ),
@@ -166,7 +166,7 @@ class _WalletPageState extends State<WalletPage> {
                 },
                 child: Icon(
                   _isBalanceVisible ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                   size: 22,
                 ),
               ),
@@ -214,9 +214,9 @@ class _WalletPageState extends State<WalletPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
+          color: Colors.white.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -250,7 +250,7 @@ class _WalletPageState extends State<WalletPage> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
@@ -261,7 +261,7 @@ class _WalletPageState extends State<WalletPage> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: isCredit ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+            color: isCredit ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(
