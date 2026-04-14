@@ -203,7 +203,7 @@ class _SignupOtpPageState extends State<SignupOtpPage> {
                                       
                                       await SupabaseService().resendOTP(
                                         phone: cleanedPhone,
-                                        type: OtpType.signup,
+                                        type: OtpType.sms,
                                       );
                                       if (mounted) {
                                         setState(() => _isLoading = false);

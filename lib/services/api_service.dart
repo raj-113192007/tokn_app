@@ -149,15 +149,12 @@ class ApiService {
     required String otp,
   }) async {
     try {
-      String formattedPhone = phone;
-      if (RegExp(r'^\d{10}$').hasMatch(phone) && !phone.startsWith('+')) {
-        formattedPhone = '+91$phone';
-      }
+      String formattedPhone = _cleanPhone(phone);
 
       final response = await SupabaseService().verifyOTP(
         phone: formattedPhone,
         token: otp,
-        type: OtpType.signup, // Changed from sms to signup
+        type: OtpType.sms, // SMS OTP verify requires sms type
       );
 
       if (response.user != null) {
