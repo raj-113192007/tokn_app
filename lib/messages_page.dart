@@ -168,31 +168,14 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
 
   final List<Map<String, dynamic>> _chats = [
     {
-      'name': 'Mock General Hospital',
-      'message': 'Your appointment is confirmed for tomorrow.',
-      'time': '10:30 AM',
-      'unread': 2,
-      'isOnline': true,
-      'imageUrl': 'https://images.unsplash.com/photo-1586773860418-d37222d8fce2?w=800',
-      'isReception': true,
-    },
-    {
-      'name': 'City Central Clinic',
-      'message': 'Please bring your previous reports.',
-      'time': 'Yesterday',
-      'unread': 0,
-      'isOnline': false,
-      'imageUrl': 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800',
-      'isReception': true,
-    },
-    {
-      'name': 'Wellness Health Centre',
-      'message': 'How are you feeling today?',
-      'time': 'Mon',
+      'name': 'TokN Platform Support',
+      'message': 'Reach out to Admin for help',
+      'time': 'Live',
       'unread': 0,
       'isOnline': true,
-      'imageUrl': 'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=800',
+      'imageUrl': 'https://ui-avatars.com/api/?name=Admin&background=1E3A8A&color=fff',
       'isReception': true,
+      'isAdmin': true,
     },
   ];
 
@@ -429,6 +412,7 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
               contactName: chat['name'],
               contactImage: chat['imageUrl'],
               isOnline: chat['unread'] > 0 || chat['isOnline'] == true,
+              isAdminChat: chat['isAdmin'] == true,
             ),
           ),
         );

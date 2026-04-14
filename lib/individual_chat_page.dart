@@ -1,17 +1,21 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tokn/services/supabase_service.dart';
 import 'widgets/animation_utils.dart';
 
 class IndividualChatPage extends StatefulWidget {
   final String contactName;
   final String contactImage;
   final bool isOnline;
+  final bool isAdminChat;
 
   const IndividualChatPage({
     super.key,
     required this.contactName,
     required this.contactImage,
     this.isOnline = false,
+    this.isAdminChat = false,
   });
 
   @override
@@ -20,34 +24,89 @@ class IndividualChatPage extends StatefulWidget {
 
 class _IndividualChatPageState extends State<IndividualChatPage> {
   final TextEditingController _messageController = TextEditingController();
-  final List<Map<String, dynamic>> _messages = [
-    {
-      'text': 'Hello! How can I help you today?',
-      'isMe': false,
-      'time': '10:00 AM',
-    },
-    {
-      'text': 'I wanted to ask about my appointment tomorrow.',
-      'isMe': true,
-      'time': '10:05 AM',
-    },
-    {
-      'text': 'Of course! It is confirmed for 11:30 AM at the Main Clinic.',
-      'isMe': false,
-      'time': '10:06 AM',
-    },
-  ];
+  final ScrollController _scrollController = ScrollController();
+  List<Map<String, dynamic>> _messages = [];
+  bool _isLoading = true;
+  Timer? _refreshTimer;
 
-  void _sendMessage() {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isAdminChat) {
+      _fetchMessages();
+      _refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) => _fetchMessages());
+    } else {
+      // Mock data for hospital chat
+      _messages = [
+        {'text': 'Hello! How can I help you today?', 'isMe': false, 'time': '10:00 AM'},
+        {'text': 'I wanted to ask about my appointment tomorrow.', 'isMe': true, 'time': '10:05 AM'},
+      ];
+      _isLoading = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchMessages() async {
+    final msgs = await SupabaseService.getChatMessages();
+    if (!mounted) return;
+    
+    setState(() {
+      _messages = msgs.map((m) {
+        final date = DateTime.tryParse(m['created_at'] ?? '')?.toLocal();
+        final isMe = m['sender_type'] == 'patient';
+        return {
+          'text': m['message'] ?? '',
+          'isMe': isMe,
+          'time': date != null ? '${date.hour > 12 ? date.hour - 12 : date.hour == 0 ? 12 : date.hour}:${date.minute.toString().padLeft(2, '0')} ${date.hour >= 12 ? 'PM' : 'AM'}' : '',
+        };
+      }).toList();
+      _isLoading = false;
+    });
+    _scrollToBottom();
+  }
+
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      });
+    }
+  }
+
+  Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
+    
+    final text = _messageController.text.trim();
+    _messageController.clear();
+    
     setState(() {
       _messages.add({
-        'text': _messageController.text.trim(),
+        'text': text,
         'isMe': true,
-        'time': '10:10 AM', // In a real app, use DateTime.now()
+        'time': 'Sending...',
       });
-      _messageController.clear();
     });
+    _scrollToBottom();
+
+    if (widget.isAdminChat) {
+      try {
+        await SupabaseService.sendChatMessage(text);
+        _fetchMessages();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to send message')));
+      }
+    }
   }
 
   @override

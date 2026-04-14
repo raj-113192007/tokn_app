@@ -510,4 +510,43 @@ class SupabaseService {
     
     return List<Map<String, dynamic>>.from(response as List);
   }
+
+  // ─── CHAT MESSAGES ───────────────────────────────────
+
+  /// Fetch chat messages involving the current user and TokN Admin
+  static Future<List<Map<String, dynamic>>> getChatMessages() async {
+    final user = ApiService.client.auth.currentUser;
+    if (user == null) return [];
+
+    try {
+      final response = await ApiService.client
+          .from('chat_messages')
+          .select()
+          .or('sender_id.eq.${user.id},receiver_id.eq.${user.id}')
+          .order('created_at', ascending: true);
+      
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      print('Error fetching chat messages: $e');
+      return [];
+    }
+  }
+
+  /// Sends a message to the TokN Admin
+  static Future<void> sendChatMessage(String message) async {
+    final user = ApiService.client.auth.currentUser;
+    if (user == null) throw 'Not logged in';
+
+    try {
+      await ApiService.client.from('chat_messages').insert({
+        'sender_id': user.id,
+        'receiver_id': null, // TokN Admin
+        'sender_type': 'patient',
+        'message': message,
+      });
+    } catch (e) {
+      print('Error sending chat message: $e');
+      rethrow;
+    }
+  }
 }
