@@ -157,7 +157,7 @@ class ApiService {
       final response = await SupabaseService().verifyOTP(
         phone: formattedPhone,
         token: otp,
-        type: OtpType.sms, // Fixed to use sms type for phone verification
+        type: OtpType.signup, // Changed from sms to signup
       );
 
       if (response.user != null) {

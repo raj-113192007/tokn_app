@@ -193,6 +193,7 @@ class _LoginOtpPageState extends State<LoginOtpPage> {
         // OTP Input using Pinput for Autofill support
         Pinput(
           length: 6,
+          androidSmsAutofillMethod: AndroidSmsAutofillMethod.smsUserConsentApi,
           autofillHints: const [AutofillHints.oneTimeCode],
           defaultPinTheme: PinTheme(
             width: 45,

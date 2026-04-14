@@ -501,9 +501,16 @@ class _HomePageState extends State<HomePage> {
 
         // Main Content Scrollable Area
         Expanded(
-          child: SingleChildScrollView(
-            controller: _homePageScrollController,
-            padding: const EdgeInsets.only(bottom: 20),
+          child: RefreshIndicator(
+            onRefresh: () async {
+              await _fetchHospitals();
+              await _fetchBookings();
+              await _fetchLikedHospitals();
+            },
+            child: SingleChildScrollView(
+              controller: _homePageScrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -634,7 +641,7 @@ class _HomePageState extends State<HomePage> {
                                   context,
                                   h['_id'] ?? '',
                                   h['name'] ?? 'Hospital',
-                                  h['image'] ?? 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=400',
+                                  h['image_url'] ?? h['avatar_url'] ?? h['image'] ?? 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=400',
                                 );
                               },
                             ),
@@ -677,7 +684,7 @@ class _HomePageState extends State<HomePage> {
                                   context,
                                   h['_id'] ?? '',
                                   h['name'] ?? 'Hospital',
-                                  h['image'] ?? 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=400',
+                                  h['image_url'] ?? h['avatar_url'] ?? h['image'] ?? 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=400',
                                 );
                               },
                             ),
@@ -732,7 +739,7 @@ class _HomePageState extends State<HomePage> {
                         context,
                         h['_id'] ?? '',
                         h['name'] ?? 'Hospital',
-                        h['image'] ?? 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=400',
+                        h['image_url'] ?? h['avatar_url'] ?? h['image'] ?? 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=400',
                       );
                     },
                   ),
@@ -741,7 +748,8 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-      ],
+      ),
+    ],
     ),
   );
 }

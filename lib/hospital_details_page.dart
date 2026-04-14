@@ -3,11 +3,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'widgets/animation_utils.dart';
 import 'package:tokn/l10n/app_localizations.dart';
 import 'widgets/glass_bottom_bar.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'services/api_service.dart';
 import 'services/supabase_service.dart';
 import 'services/wallet_service.dart';
 import 'widgets/tokn_snackbar.dart';
+import 'services/notification_service.dart';
 
 
 class HospitalDetailsPage extends StatefulWidget {
@@ -33,6 +35,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
   bool _isLoadingDetails = true;
   List<dynamic> _familyMembers = [];
   bool _isLoadingFamily = true;
+  bool _isProcessingBooking = false;
 
   @override
   void initState() {
@@ -288,7 +291,19 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                         ),
                         const SizedBox(height: 15),
                         ScaleOnTap(
-                          onTap: () {},
+                          onTap: () async {
+                            final mapUrl = _hospitalDetails?['location_url'];
+                            if (mapUrl != null && mapUrl.toString().isNotEmpty) {
+                              final uri = Uri.parse(mapUrl);
+                              if (await canLaunchUrl(uri)) {
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              } else {
+                                if (mounted) ToknSnackBar.show(context, message: 'Could not launch maps');
+                              }
+                            } else {
+                              if (mounted) ToknSnackBar.show(context, message: 'Map link not provided for this hospital');
+                            }
+                          },
                           child: Container(
                             height: 45,
                             width: double.infinity,
@@ -490,8 +505,10 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
     required VoidCallback onTap,
   }) {
     return ScaleOnTap(
-      onTap: onTap,
-      child: Container(
+      onTap: _isProcessingBooking ? null : onTap,
+      child: Opacity(
+        opacity: _isProcessingBooking ? 0.6 : 1.0,
+        child: Container(
         height: 65,
         decoration: BoxDecoration(
           color: color,
@@ -525,12 +542,14 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   final _problemController = TextEditingController();
 
   void _showPatientSelector(BuildContext context, String type, double price) {
+    if (_isProcessingBooking) return;
     _problemController.clear();
     showModalBottomSheet(
       context: context,
@@ -730,21 +749,57 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
   }
 
   Future<void> _processUpiPayment(String type, double price, String patientName, String description) async {
+    if (_isProcessingBooking) return;
+    
     final success = await _walletService.launchUpiPayment(
       amount: price,
       note: '$type Booking Payment'
     );
 
     if (success && mounted) {
-      // In P2P (personal UPI), we can't verify SUCCESS automatically.
-      // We assume user will pay and show the confirmation.
-      _finalizeBooking(type, price, patientName, description);
+      // Show confirmation dialog after returning from UPI app
+      _showUpiConfirmation(type, price, patientName, description);
     } else if (mounted) {
       ToknSnackBar.show(context, message: 'Could not open UPI apps');
     }
   }
 
+  void _showUpiConfirmation(String type, double price, String patientName, String description) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Confirm Payment', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        content: Text(
+          'Have you completed the payment of ₹$price for your $type token? Click "Confirm" only after the payment is successful in your UPI app.',
+          style: GoogleFonts.poppins(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: GoogleFonts.poppins(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _finalizeBooking(type, price, patientName, description);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2E4C9D),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: Text('Confirm & Book', style: GoogleFonts.poppins(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _finalizeBooking(String type, double price, String patientName, String description) async {
+    if (_isProcessingBooking) return;
+    setState(() => _isProcessingBooking = true);
+    
     final now = DateTime.now();
     final dateStr = "${now.year}-${now.month}-${now.day}";
     final timeStr = "${now.hour}:${now.minute}";
@@ -755,21 +810,31 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
       builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
-    final result = await ApiService.createBooking(
-      hospitalId: widget.hospitalId,
-      date: dateStr,
-      time: timeStr,
-      type: type,
-      price: price,
-      patientName: patientName,
-      description: description,
-    );
+    try {
+      final result = await ApiService.createBooking(
+        hospitalId: widget.hospitalId,
+        date: dateStr,
+        time: timeStr,
+        type: type,
+        price: price,
+        patientName: patientName,
+        description: description,
+      );
 
-    if (mounted) {
-      Navigator.pop(context); // Close loading
+      if (mounted) {
+        Navigator.pop(context); // Close loading
 
-      if (result['success'] == true) {
+        if (result['success'] == true) {
         final token = result['data']['token_number'].toString();
+        
+        // Trigger Notification
+        await NotificationService.requestPermission();
+        await NotificationService.showBookingConfirmation(
+          patientName: patientName,
+          type: type,
+          token: token,
+        );
+
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -821,6 +886,17 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
             ],
           ),
         );
+      }
+      
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading
+        ToknSnackBar.show(context, message: 'Booking error: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessingBooking = false);
       }
     }
   }
