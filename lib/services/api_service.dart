@@ -13,11 +13,15 @@ class ApiService {
 
   // Helper to clean phone numbers strictly for Supabase
   static String _cleanPhone(String phone) {
-    String cleaned = phone.trim().replaceAll(RegExp(r'[^\d+]'), '');
-    if (RegExp(r'^\d{10}$').hasMatch(cleaned)) {
-      cleaned = '+91$cleaned';
+    String clean = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    if (clean.startsWith('+')) return clean;
+    if (clean.length == 10 && RegExp(r'^\d+$').hasMatch(clean)) {
+      return '+91$clean';
     }
-    return cleaned;
+    if (clean.length == 12 && clean.startsWith('91')) {
+      return '+$clean';
+    }
+    return clean;
   }
 
   // Helper to get headers with token (not really needed for mock, but kept for interface)
@@ -162,13 +166,18 @@ class ApiService {
         // but we verify and set it formally here.
         try {
           await SupabaseService().updateUser(
-            email: email,
-            password: password,
+            email: email.trim().toLowerCase(),
+            password: password.trim(),
           );
         } catch (e) {
-          final errorStr = e.toString().toLowerCase();
-          if (!errorStr.contains('exists') && !errorStr.contains('already registered')) {
-            rethrow;
+          print("Optional Email/Password update warning: $e");
+          // Fall back to just updating the password
+          try {
+            await SupabaseService().updateUser(
+              password: password.trim(),
+            );
+          } catch (e2) {
+            print("Fatal Auth update error: $e2");
           }
         }
         
