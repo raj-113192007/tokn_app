@@ -1,9 +1,74 @@
 // ignore_for_file: avoid_print, unused_local_variable, unused_element, use_build_context_synchronously, unused_field, file_names, constant_identifier_names, deprecated_member_use, unused_import
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:flutter/foundation.dart';
+
 
 
 class SupabaseService {
+  // Record Login Activity
+  Future<void> recordLoginActivity() async {
+    try {
+      final user = client.auth.currentUser;
+      if (user == null) return;
+
+      String deviceInfo = "Unknown Device";
+      String location = "Unknown Location";
+
+      // 1. Get Device Info
+      try {
+        final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
+        if (kIsWeb) {
+          final webInfo = await deviceInfoPlugin.webBrowserInfo;
+          deviceInfo = "${webInfo.browserName.name} on ${webInfo.platform}";
+        } else if (Platform.isAndroid) {
+          final androidInfo = await deviceInfoPlugin.androidInfo;
+          deviceInfo = "${androidInfo.manufacturer} ${androidInfo.model} (Android ${androidInfo.version.release})";
+        } else if (Platform.isIOS) {
+          final iosInfo = await deviceInfoPlugin.iosInfo;
+          deviceInfo = "${iosInfo.name} ${iosInfo.model} (iOS ${iosInfo.systemVersion})";
+        } else if (Platform.isWindows) {
+          final winInfo = await deviceInfoPlugin.windowsInfo;
+          deviceInfo = "Windows: ${winInfo.computerName}";
+        }
+      } catch (e) {
+        print("Error getting device info: $e");
+      }
+
+      // 2. Get Location (Approximate or via Geolocator if permission granted)
+      try {
+        bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (serviceEnabled) {
+          LocationPermission permission = await Geolocator.checkPermission();
+          if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
+            Position position = await Geolocator.getCurrentPosition(
+              desiredAccuracy: LocationAccuracy.low,
+              timeLimit: const Duration(seconds: 5),
+            );
+            location = "${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}";
+          }
+        }
+      } catch (e) {
+        print("Error getting location: $e");
+      }
+
+      // 3. Insert into database
+      await client.from('login_activity').insert({
+        'user_id': user.id,
+        'device_info': deviceInfo,
+        'location': location,
+        'login_time': DateTime.now().toIso8601String(),
+      });
+      
+      print("Login activity recorded for user: ${user.id}");
+    } catch (e) {
+      print("Error recording login activity: $e");
+    }
+  }
+
+
   static final client = Supabase.instance.client;
 
   // ─── AUTH ───────────────────────────────────────────────
@@ -101,8 +166,23 @@ class SupabaseService {
   }
 
   // Reset Password
-  Future<void> resetPassword(String email) async {
-    await client.auth.resetPasswordForEmail(email);
+  Future<Map<String, dynamic>> resetPassword(String identifier) async {
+    final isEmail = identifier.contains('@');
+    
+    if (isEmail) {
+      await client.auth.resetPasswordForEmail(identifier.trim().toLowerCase());
+      return {'success': true, 'type': 'email'};
+    } else {
+      // Clean phone number
+      String formattedPhone = identifier.trim().replaceAll(RegExp(r'[^\d+]'), '');
+      if (formattedPhone.length == 10 && !formattedPhone.startsWith('+')) {
+        formattedPhone = '+91$formattedPhone';
+      }
+      
+      await client.auth.signInWithOtp(phone: formattedPhone);
+      return {'success': true, 'type': 'phone', 'phone': formattedPhone};
+    }
+
   }
 
   // Update User (e.g. set password/email after OTP signup)
@@ -288,6 +368,59 @@ class SupabaseService {
 
     return response;
   }
+
+  // Atomic booking with Wallet (Deduct + Book in one go)
+  Future<Map<String, dynamic>> bookTokenWithWallet({
+    required String hospitalId,
+    required String bookingType,
+    required double price,
+    String? patientName,
+    String? description,
+    String? doctorId,
+  }) async {
+    try {
+      final response = await client.rpc('book_token_with_wallet', params: {
+        'p_hospital_id': hospitalId,
+        'p_doctor_id': doctorId ?? '',
+        'p_patient_name': patientName ?? 'You',
+        'p_description': description ?? '',
+        'p_booking_type': bookingType,
+        'p_price': price,
+      });
+      return Map<String, dynamic>.from(response);
+    } catch (e) {
+      print('Error booking with wallet: $e');
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  // Book token with UPI (Record after external success)
+  Future<Map<String, dynamic>> bookTokenWithUpi({
+    required String hospitalId,
+    required String bookingType,
+    required double price,
+    required String txnId,
+    String? patientName,
+    String? description,
+    String? doctorId,
+  }) async {
+    try {
+      final response = await client.rpc('book_token_with_upi', params: {
+        'p_hospital_id': hospitalId,
+        'p_doctor_id': doctorId ?? '',
+        'p_patient_name': patientName ?? 'You',
+        'p_description': description ?? '',
+        'p_booking_type': bookingType,
+        'p_price': price,
+        'p_txn_id': txnId,
+      });
+      return Map<String, dynamic>.from(response);
+    } catch (e) {
+      print('Error booking with UPI: $e');
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
 
   // ─── LIKED HOSPITALS ──────────────────────────────────
 

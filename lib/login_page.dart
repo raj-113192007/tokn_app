@@ -8,6 +8,7 @@ import 'widgets/animation_utils.dart';
 import 'services/api_service.dart';
 import 'home_page.dart';
 import 'widgets/tokn_snackbar.dart';
+import 'services/supabase_service.dart';
 
 
 
@@ -196,6 +197,7 @@ class _LoginPageState extends State<LoginPage> {
                                               MaterialPageRoute(builder: (context) => const HomePage()),
                                               (route) => false,
                                             );
+                                            SupabaseService().recordLoginActivity();
                                           } else {
                                             ToknSnackBar.show(context, message: result['message'] ?? 'Login failed');
                                           }

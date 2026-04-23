@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'widgets/animation_utils.dart';
 import 'services/api_service.dart';
 import 'widgets/tokn_snackbar.dart';
+import 'login_otp_page.dart';
 
 
 
@@ -16,6 +17,7 @@ class ForgotPasswordPage extends StatefulWidget {
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final TextEditingController _controller = TextEditingController();
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -77,38 +79,60 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               width: double.infinity,
               height: 55,
               child: ScaleOnTap(
-                onTap: () async {
+                onTap: _isLoading ? null : () async {
                   final input = _controller.text.trim();
                   if (input.isEmpty) return;
                   
+                  setState(() => _isLoading = true);
                   final result = await ApiService.resetPassword(input);
+                  
                   if (mounted) {
+                    setState(() => _isLoading = false);
                     ToknSnackBar.show(
                       context, 
                       message: result['message'],
                       type: result['success'] ? SnackBarType.success : SnackBarType.error,
                     );
+                    
                     if (result['success']) {
-                      Navigator.pop(context);
+                      if (result['type'] == 'phone') {
+                        // Navigate to OTP page for phone verification
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => LoginOtpPage(
+                              identifier: result['phone'],
+                              isPhone: true,
+                            ),
+                          ),
+                        );
+                      } else {
+                        // Email link sent, go back to login
+                        Navigator.pop(context);
+                      }
                     }
                   }
-
                 },
                 child: Container(
                   decoration: BoxDecoration(
                     color: const Color(0xFF2E4C9D),
                     borderRadius: BorderRadius.circular(30),
                   ),
-
                   child: Center(
-                    child: Text(
-                      'Continue',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: _isLoading 
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : Text(
+                          'Continue',
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                   ),
                 ),
               ),

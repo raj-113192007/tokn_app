@@ -51,6 +51,7 @@ class _LoginOtpPageState extends State<LoginOtpPage> {
               MaterialPageRoute(builder: (context) => const HomePage()),
               (route) => false,
             );
+            SupabaseService().recordLoginActivity();
           });
         } else {
           ToknSnackBar.show(context, message: result['message'] ?? 'Unknown error');

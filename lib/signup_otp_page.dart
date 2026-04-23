@@ -61,6 +61,7 @@ class _SignupOtpPageState extends State<SignupOtpPage> {
               MaterialPageRoute(builder: (context) => const HomePage()),
               (route) => false,
             );
+            SupabaseService().recordLoginActivity();
           });
         } else {
           ToknSnackBar.show(context, message: result['message'] ?? 'Verification failed');

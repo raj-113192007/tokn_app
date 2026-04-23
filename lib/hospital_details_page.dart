@@ -733,18 +733,21 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
       builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
-    final result = await _walletService.deductBalance(
-      amount: price,
-      description: '$type Booking for $patientName',
+    final result = await ApiService.createBookingWithWallet(
+      hospitalId: widget.hospitalId,
+      type: type,
+      price: price,
+      patientName: patientName,
+      description: description,
     );
 
     if (mounted) {
       Navigator.pop(context); // Close loading
 
       if (result['success'] == true) {
-        _finalizeBooking(type, price, patientName, description);
+        _handleBookingSuccess(result['data'], type, patientName);
       } else {
-        ToknSnackBar.show(context, message: result['message'] ?? 'Insufficient wallet balance');
+        ToknSnackBar.show(context, message: result['error'] ?? 'Insufficient wallet balance');
       }
     }
   }
@@ -762,7 +765,13 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
     if (mounted) Navigator.pop(context);
 
     if (response != null && (response.toLowerCase().contains("status=success") || response.toLowerCase().contains("status=submitted"))) {
-      _finalizeBooking(type, price, patientName, description);
+      // Extract txnId if possible, or use a placeholder
+      String txnId = 'UPI_NATIVE_${DateTime.now().millisecondsSinceEpoch}';
+      if (response.contains('txnId=')) {
+        txnId = response.split('txnId=')[1].split('&')[0];
+      }
+      
+      _finalizeUpiBooking(type, price, patientName, description, txnId);
     } else if (response != null) {
       ToknSnackBar.show(context, message: 'Payment Failed or Cancelled');
     } else {
@@ -781,15 +790,32 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
   }
 
   void _showUpiConfirmation(String type, double price, String patientName, String description) {
+    final TextEditingController txnController = TextEditingController();
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Confirm Payment', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-        content: Text(
-          'Have you completed the payment of ₹$price for your $type token? Click "Confirm" only after the payment is successful in your UPI app.',
-          style: GoogleFonts.poppins(),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Have you completed the payment of ₹$price for your $type token? If yes, please enter the Transaction ID below and click "Confirm".',
+              style: GoogleFonts.poppins(),
+            ),
+            const SizedBox(height: 15),
+            TextField(
+              controller: txnController,
+              decoration: InputDecoration(
+                hintText: 'UPI Transaction ID / Ref No.',
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -798,8 +824,12 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
           ),
           ElevatedButton(
             onPressed: () {
+              if (txnController.text.isEmpty) {
+                ToknSnackBar.show(context, message: 'Please enter transaction ID');
+                return;
+              }
               Navigator.pop(context);
-              _finalizeBooking(type, price, patientName, description);
+              _finalizeUpiBooking(type, price, patientName, description, txnController.text);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2E4C9D),
@@ -812,14 +842,10 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
     );
   }
 
-  Future<void> _finalizeBooking(String type, double price, String patientName, String description) async {
+  Future<void> _finalizeUpiBooking(String type, double price, String patientName, String description, String txnId) async {
     if (_isProcessingBooking) return;
     setState(() => _isProcessingBooking = true);
     
-    final now = DateTime.now();
-    final dateStr = "${now.year}-${now.month}-${now.day}";
-    final timeStr = "${now.hour}:${now.minute}";
-
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -827,10 +853,9 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
     );
 
     try {
-      final result = await ApiService.createBooking(
+      final result = await ApiService.createBookingWithUpi(
         hospitalId: widget.hospitalId,
-        date: dateStr,
-        time: timeStr,
+        txnId: txnId,
         type: type,
         price: price,
         patientName: patientName,
@@ -841,69 +866,10 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
         Navigator.pop(context); // Close loading
 
         if (result['success'] == true) {
-        final token = result['data']['token_number'].toString();
-        
-        // Trigger Notification
-        await NotificationService.requestPermission();
-        await NotificationService.showBookingConfirmation(
-          patientName: patientName,
-          type: type,
-          token: token,
-        );
-
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Text(AppLocalizations.of(context)!.bookingConfirmed, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('${AppLocalizations.of(context)!.tokenFor} $patientName', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: const Color(0xFF2E4C9D))),
-                const SizedBox(height: 16),
-                Text(AppLocalizations.of(context)!.yourTokenIs(type), style: GoogleFonts.poppins()),
-                const SizedBox(height: 10),
-                Text(
-                  token,
-                  style: GoogleFonts.poppins(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: type == 'Emergency' ? Colors.redAccent : const Color(0xFF2E4C9D),
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.pop(context); // Go back home or to bookings
-                },
-                child: Text('OK', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-        );
-      } else {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Text('Booking Failed', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.redAccent)),
-            content: Text(
-              result['error'] ?? 'There was an error creating your booking. If you have already paid, please contact support with your transaction details.',
-              style: GoogleFonts.poppins(),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('OK', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-        );
-      }
-      
+          _handleBookingSuccess(result['data'], type, patientName);
+        } else {
+          _showErrorDialog('Booking Failed', result['error'] ?? 'Error creating booking');
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -916,6 +882,74 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
       }
     }
   }
+
+  void _handleBookingSuccess(dynamic data, String type, String patientName) async {
+    final token = data['token_number'].toString();
+    
+    // Trigger Notification
+    await NotificationService.requestPermission();
+    await NotificationService.showBookingConfirmation(
+      patientName: patientName,
+      type: type,
+      token: token,
+    );
+
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(AppLocalizations.of(context)!.bookingConfirmed, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('${AppLocalizations.of(context)!.tokenFor} $patientName', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: const Color(0xFF2E4C9D))),
+              const SizedBox(height: 16),
+              Text(AppLocalizations.of(context)!.yourTokenIs(type), style: GoogleFonts.poppins()),
+              const SizedBox(height: 10),
+              Text(
+                token,
+                style: GoogleFonts.poppins(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: type == 'Emergency' ? Colors.redAccent : const Color(0xFF2E4C9D),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pop(context); // Go back
+              },
+              child: Text('OK', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+        content: Text(message, style: GoogleFonts.poppins()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Remove the old _finalizeBooking method as it is replaced by RPC methods
+
 
   Widget _buildSpecialtyChip(IconData icon, String label) {
     return Container(

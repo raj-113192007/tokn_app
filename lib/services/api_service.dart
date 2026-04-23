@@ -208,14 +208,24 @@ class ApiService {
 
   // Auth: Reset Password
 
-  static Future<Map<String, dynamic>> resetPassword(String email) async {
+  static Future<Map<String, dynamic>> resetPassword(String identifier) async {
     try {
-      await SupabaseService().resetPassword(email);
-      return {'success': true, 'message': 'Password reset link sent to your email.'};
+      final result = await SupabaseService().resetPassword(identifier);
+      if (result['type'] == 'email') {
+        return {'success': true, 'message': 'Password reset link sent to your email.', 'type': 'email'};
+      } else {
+        return {
+          'success': true, 
+          'message': 'Verification code sent to your mobile number.', 
+          'type': 'phone',
+          'phone': result['phone']
+        };
+      }
     } catch (e) {
       return {'success': false, 'message': ErrorMapper.mapError(e.toString())};
     }
   }
+
 
   // Hospitals: Get All
   static Future<Map<String, dynamic>> getHospitals() async {
@@ -263,6 +273,59 @@ class ApiService {
       return {'success': false, 'error': ErrorMapper.mapError(e.toString())};
     }
   }
+
+  static Future<Map<String, dynamic>> createBookingWithWallet({
+    required String hospitalId,
+    String type = 'Normal',
+    double price = 19.0,
+    String? patientName,
+    String? description,
+  }) async {
+    try {
+      final result = await SupabaseService().bookTokenWithWallet(
+        hospitalId: hospitalId,
+        bookingType: type,
+        price: price,
+        patientName: patientName,
+        description: description,
+      );
+      if (result['success'] == true) {
+        return {'success': true, 'data': result};
+      } else {
+        return {'success': false, 'error': result['error'] ?? 'Booking failed'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': ErrorMapper.mapError(e.toString())};
+    }
+  }
+
+  static Future<Map<String, dynamic>> createBookingWithUpi({
+    required String hospitalId,
+    required String txnId,
+    String type = 'Normal',
+    double price = 19.0,
+    String? patientName,
+    String? description,
+  }) async {
+    try {
+      final result = await SupabaseService().bookTokenWithUpi(
+        hospitalId: hospitalId,
+        bookingType: type,
+        price: price,
+        txnId: txnId,
+        patientName: patientName,
+        description: description,
+      );
+      if (result['success'] == true) {
+        return {'success': true, 'data': result};
+      } else {
+        return {'success': false, 'error': result['error'] ?? 'Booking failed'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': ErrorMapper.mapError(e.toString())};
+    }
+  }
+
 
   // Bookings: Get My Bookings
   static Future<Map<String, dynamic>> getBookings() async {
