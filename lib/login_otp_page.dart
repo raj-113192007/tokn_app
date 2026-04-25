@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tokn/home_page.dart';
+import 'package:tokn/reset_password_page.dart';
 import 'widgets/animation_utils.dart';
 import 'services/supabase_service.dart';
 import 'services/api_service.dart';
@@ -15,11 +16,13 @@ import 'package:pinput/pinput.dart';
 class LoginOtpPage extends StatefulWidget {
   final String identifier;
   final bool isPhone;
+  final bool isResetPassword;
 
   const LoginOtpPage({
     super.key,
     required this.identifier,
     required this.isPhone,
+    this.isResetPassword = false,
   });
 
   @override
@@ -46,12 +49,19 @@ class _LoginOtpPageState extends State<LoginOtpPage> {
         if (result['success'] == true && result['session'] != null) {
           setState(() => _isVerified = true);
           Future.delayed(const Duration(milliseconds: 500), () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const HomePage()),
-              (route) => false,
-            );
-            SupabaseService().recordLoginActivity();
+            if (widget.isResetPassword) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const ResetPasswordPage()),
+              );
+            } else {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const HomePage()),
+                (route) => false,
+              );
+              SupabaseService().recordLoginActivity();
+            }
           });
         } else {
           ToknSnackBar.show(context, message: result['message'] ?? 'Unknown error');
@@ -282,7 +292,7 @@ class _LoginOtpPageState extends State<LoginOtpPage> {
                       size: 30,
                     )
                   : Text(
-                      'Sign In',
+                      widget.isResetPassword ? 'Verify' : 'Sign In',
                       style: GoogleFonts.poppins(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,

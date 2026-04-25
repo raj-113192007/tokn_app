@@ -165,23 +165,25 @@ class SupabaseService {
     );
   }
 
-  // Reset Password
+
+
+  // Reset Password (strictly via Mobile OTP as per requirement)
   Future<Map<String, dynamic>> resetPassword(String identifier) async {
-    final isEmail = identifier.contains('@');
-    
-    if (isEmail) {
-      await client.auth.resetPasswordForEmail(identifier.trim().toLowerCase());
-      return {'success': true, 'type': 'email'};
-    } else {
-      // Clean phone number
-      String formattedPhone = identifier.trim().replaceAll(RegExp(r'[^\d+]'), '');
-      if (formattedPhone.length == 10 && !formattedPhone.startsWith('+')) {
-        formattedPhone = '+91$formattedPhone';
-      }
-      
-      await client.auth.signInWithOtp(phone: formattedPhone);
-      return {'success': true, 'type': 'phone', 'phone': formattedPhone};
+    String formattedPhone = identifier.trim().replaceAll(RegExp(r'[^\d+]'), '');
+    if (formattedPhone.length == 10 && !formattedPhone.startsWith('+')) {
+      formattedPhone = '+91$formattedPhone';
     }
+
+    // Check if user exists with this phone
+    final isRegistered = await isEmailOrPhoneRegistered('', formattedPhone);
+
+    if (!isRegistered) {
+      throw Exception('No account found with this phone number.');
+    }
+    
+    await client.auth.signInWithOtp(phone: formattedPhone);
+    return {'success': true, 'type': 'phone', 'phone': formattedPhone};
+  }
 
   }
 

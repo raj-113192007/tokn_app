@@ -54,7 +54,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             ),
             const SizedBox(height: 10),
             Text(
-              'Enter your email or phone number to receive a verification code.',
+              'Enter your registered mobile number to receive a verification code.',
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 color: Colors.grey[600],
@@ -63,9 +63,16 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             const SizedBox(height: 50),
             TextField(
               controller: _controller,
+              keyboardType: TextInputType.phone,
               decoration: InputDecoration(
-                hintText: 'Email or Mobile Number',
+                hintText: 'Mobile Number',
                 prefixIcon: const Icon(Icons.person_outline),
+                prefixText: (_controller.text.isNotEmpty && RegExp(r'^\d+$').hasMatch(_controller.text)) 
+                  ? '+91 ' : null,
+                prefixStyle: GoogleFonts.poppins(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
                 enabledBorder: const UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.black26),
                 ),
@@ -73,6 +80,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   borderSide: BorderSide(color: Color(0xFF2E4C9D), width: 2),
                 ),
               ),
+              onChanged: (value) => setState(() {}),
             ),
             const SizedBox(height: 50),
             SizedBox(
@@ -103,6 +111,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             builder: (context) => LoginOtpPage(
                               identifier: result['phone'],
                               isPhone: true,
+                              isResetPassword: true,
                             ),
                           ),
                         );
