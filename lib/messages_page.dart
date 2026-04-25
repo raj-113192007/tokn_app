@@ -143,6 +143,7 @@ class _MessagesPageState extends State<MessagesPage> with SingleTickerProviderSt
                               contactName: hName,
                               contactImage: hData['image'] ?? '',
                               isOnline: true,
+                              receiverId: hData['id'],
                             ),
                           ),
                         );

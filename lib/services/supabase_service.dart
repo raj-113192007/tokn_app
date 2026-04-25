@@ -773,7 +773,9 @@ class SupabaseService {
               return (msg['sender_id'] == user.id && msg['receiver_id'] == otherUserId) ||
                      (msg['sender_id'] == otherUserId && msg['receiver_id'] == user.id);
             } else {
-              return (msg['sender_id'] == user.id && msg['receiver_id'] == null) ||
+              // Chat with Admin
+              return (msg['sender_id'] == user.id && (msg['receiver_id'] == null || msg['receiver_id'] == 'admin')) ||
+                     (msg['sender_type'] == 'admin' && msg['receiver_id'] == user.id) ||
                      (msg['sender_id'] == null && msg['receiver_id'] == user.id);
             }
           }).toList();

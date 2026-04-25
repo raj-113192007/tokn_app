@@ -10,6 +10,7 @@ class IndividualChatPage extends StatefulWidget {
   final String contactImage;
   final bool isOnline;
   final bool isAdminChat;
+  final String? receiverId;
 
   const IndividualChatPage({
     super.key,
@@ -17,6 +18,7 @@ class IndividualChatPage extends StatefulWidget {
     required this.contactImage,
     this.isOnline = false,
     this.isAdminChat = false,
+    this.receiverId,
   });
 
   @override
@@ -33,26 +35,17 @@ class _IndividualChatPageState extends State<IndividualChatPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.isAdminChat) {
-      _setupChatStream();
-    } else {
-      // Mock data for hospital chat
-      _messages = [
-        {'text': 'Hello! How can I help you today?', 'isMe': false, 'time': '10:00 AM'},
-        {'text': 'I wanted to ask about my appointment tomorrow.', 'isMe': true, 'time': '10:05 AM'},
-      ];
-      _isLoading = false;
-    }
+    _setupChatStream();
   }
 
   void _setupChatStream() {
-    _chatSubscription = SupabaseService.streamChatMessages().listen((msgs) {
+    _chatSubscription = SupabaseService.streamChatMessages(otherUserId: widget.receiverId).listen((msgs) {
       if (!mounted) return;
       
       setState(() {
         _messages = msgs.map((m) {
           final date = DateTime.tryParse(m['created_at'] ?? '')?.toLocal();
-          final isMe = m['sender_type'] == 'patient';
+          final isMe = m['sender_type'] == 'user';
           return {
             'text': m['message'] ?? '',
             'isMe': isMe,
@@ -102,12 +95,14 @@ class _IndividualChatPageState extends State<IndividualChatPage> {
     });
     _scrollToBottom();
 
-    if (widget.isAdminChat) {
-      try {
-        await SupabaseService.sendChatMessage(text, senderType: 'patient');
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to send message')));
-      }
+    try {
+      await SupabaseService.sendChatMessage(
+        text, 
+        receiverId: widget.receiverId,
+        senderType: 'user'
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to send message')));
     }
   }
 
