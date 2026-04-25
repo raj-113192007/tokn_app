@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/foundation.dart';
+import 'package:tokn/services/chat_security_service.dart';
 
 
 
@@ -70,24 +71,66 @@ class SupabaseService {
 
 
   static final client = Supabase.instance.client;
+  
+  // Robust phone cleaning for Indian context
+  String _formatPhone(String phone) {
+    String clean = phone.trim().replaceAll(RegExp(r'[^\d+]'), '');
+    
+    // Remove leading zero
+    if (clean.startsWith('0')) clean = clean.substring(1);
+    
+    // 10 digits -> add +91
+    if (clean.length == 10 && !clean.startsWith('+')) {
+      return '+91$clean';
+    }
+    
+    // 12 digits starting with 91 -> add +
+    if (clean.length == 12 && clean.startsWith('91')) {
+      return '+$clean';
+    }
+    
+    // If already has +, just return
+    if (clean.startsWith('+')) return clean;
+    
+    // Fallback: if not empty and no plus, add it (might be other country code)
+    if (clean.isNotEmpty && !clean.startsWith('+')) {
+      return '+$clean';
+    }
+    
+    return clean;
+  }
 
   // ─── AUTH ───────────────────────────────────────────────
 
   // Check if email or phone is already registered in profiles
   Future<bool> isEmailOrPhoneRegistered(String email, String phone) async {
-    // Strict cleaning: keep only digits and leading plus
-    String formattedPhone = phone.trim().replaceAll(RegExp(r'[^\d+]'), '');
-    
-    if (RegExp(r'^\d{10}$').hasMatch(formattedPhone)) {
-      formattedPhone = '+91$formattedPhone';
-    }
+    String formattedPhone = _formatPhone(phone);
 
-    final response = await client
-        .from('profiles')
-        .select('id')
-        .or('email.eq.${email.trim().toLowerCase()},phone.eq.$formattedPhone');
+    print('SUPABASE_DEBUG: Checking registration for Email: "$email", Phone: "$formattedPhone"');
     
-    return (response as List).isNotEmpty;
+    try {
+      PostgrestFilterBuilder query = client.from('profiles').select('id');
+      
+      final cleanEmail = email.trim().toLowerCase();
+      
+      if (cleanEmail.isNotEmpty && formattedPhone.isNotEmpty) {
+        query = query.or('email.eq.$cleanEmail,phone.eq.$formattedPhone');
+      } else if (cleanEmail.isNotEmpty) {
+        query = query.eq('email', cleanEmail);
+      } else if (formattedPhone.isNotEmpty) {
+        query = query.eq('phone', formattedPhone);
+      } else {
+        return false;
+      }
+
+      final response = await query;
+      final exists = (response as List).isNotEmpty;
+      print('SUPABASE_DEBUG: Registration check result: $exists');
+      return exists;
+    } catch (e) {
+      print('SUPABASE_DEBUG: Registration check ERROR: $e');
+      rethrow;
+    }
   }
 
   // Sign up with Email
@@ -109,7 +152,7 @@ class SupabaseService {
     required String password,
     required String fullName,
   }) async {
-    final cleanedPhone = phone.trim().replaceAll(RegExp(r'[^\d+]'), '');
+    final cleanedPhone = _formatPhone(phone);
     print('SUPABASE_DEBUG: Calling signUp with Phone: $cleanedPhone');
     
     try {
@@ -169,22 +212,32 @@ class SupabaseService {
 
   // Reset Password (strictly via Mobile OTP as per requirement)
   Future<Map<String, dynamic>> resetPassword(String identifier) async {
-    String formattedPhone = identifier.trim().replaceAll(RegExp(r'[^\d+]'), '');
-    if (formattedPhone.length == 10 && !formattedPhone.startsWith('+')) {
-      formattedPhone = '+91$formattedPhone';
-    }
+    String formattedPhone = _formatPhone(identifier);
+
+    print('SUPABASE_DEBUG: Attempting password reset for $formattedPhone');
 
     // Check if user exists with this phone
     final isRegistered = await isEmailOrPhoneRegistered('', formattedPhone);
 
     if (!isRegistered) {
+      print('SUPABASE_DEBUG: User not found for reset');
       throw Exception('No account found with this phone number.');
     }
     
-    await client.auth.signInWithOtp(phone: formattedPhone);
-    return {'success': true, 'type': 'phone', 'phone': formattedPhone};
-  }
-
+    try {
+      print('SUPABASE_DEBUG: Sending OTP via signInWithOtp for reset (Phone: $formattedPhone)');
+      await client.auth.signInWithOtp(
+        phone: formattedPhone,
+      );
+      print('SUPABASE_DEBUG: Reset OTP sent successfully');
+      return {'success': true, 'type': 'phone', 'phone': formattedPhone};
+    } catch (e) {
+      print('SUPABASE_DEBUG: signInWithOtp ERROR: $e');
+      if (e is AuthException) {
+        print('SUPABASE_DEBUG: AuthException details: ${e.message}, ${e.statusCode}');
+      }
+      rethrow;
+    }
   }
 
   // Update User (e.g. set password/email after OTP signup)
@@ -203,7 +256,7 @@ class SupabaseService {
     String? phone,
     required OtpType type,
   }) async {
-    final cleanedPhone = phone?.trim().replaceAll(RegExp(r'[^\d+]'), '');
+    final cleanedPhone = phone != null ? _formatPhone(phone) : null;
     print('SUPABASE_DEBUG: Calling resend OTP - Type: $type, Phone: $cleanedPhone');
     
     try {
@@ -649,40 +702,91 @@ class SupabaseService {
 
   // ─── CHAT MESSAGES ───────────────────────────────────
 
-  /// Fetch chat messages involving the current user and TokN Admin
-  static Future<List<Map<String, dynamic>>> getChatMessages() async {
+  static Future<List<Map<String, dynamic>>> getChatMessages({String? otherUserId}) async {
     final user = client.auth.currentUser;
     if (user == null) return [];
 
     try {
-      final response = await client
-          .from('chat_messages')
-          .select()
-          .or('sender_id.eq.${user.id},receiver_id.eq.${user.id}')
-          .order('created_at', ascending: true);
+      final query = client.from('chat_messages').select();
       
-      return List<Map<String, dynamic>>.from(response);
+      PostgrestFilterBuilder finalQuery;
+      if (otherUserId != null) {
+        finalQuery = query.or('and(sender_id.eq.${user.id},receiver_id.eq.$otherUserId),and(sender_id.eq.$otherUserId,receiver_id.eq.${user.id})');
+      } else {
+        // Support/Admin chat (where receiver_id is NULL)
+        finalQuery = query.or('and(sender_id.eq.${user.id},receiver_id.is.null),and(sender_id.is.null,receiver_id.eq.${user.id})');
+      }
+
+      final response = await finalQuery.order('created_at', ascending: true);
+      
+      final msgs = List<Map<String, dynamic>>.from(response);
+      
+      // Decrypt messages
+      for (var msg in msgs) {
+        msg['message'] = ChatSecurityService.decryptMessage(
+          msg['message'] ?? '', 
+          msg['sender_id'], 
+          msg['receiver_id']
+        );
+      }
+      
+      return msgs;
     } catch (e) {
       print('Error fetching chat messages: $e');
       return [];
     }
   }
 
-  /// Sends a message to the TokN Admin
-  static Future<void> sendChatMessage(String message) async {
+  /// Sends a message (encrypted)
+  static Future<void> sendChatMessage(String message, {String? receiverId, String senderType = 'user'}) async {
     final user = client.auth.currentUser;
     if (user == null) throw 'Not logged in';
 
     try {
+      final encryptedMessage = ChatSecurityService.encryptMessage(message, user.id, receiverId);
+      
       await client.from('chat_messages').insert({
         'sender_id': user.id,
-        'receiver_id': null, // TokN Admin
-        'sender_type': 'patient',
-        'message': message,
+        'receiver_id': receiverId,
+        'sender_type': senderType,
+        'message': encryptedMessage,
       });
     } catch (e) {
       print('Error sending chat message: $e');
       rethrow;
     }
+  }
+
+  /// Stream chat messages (Real-time + Decrypted)
+  static Stream<List<Map<String, dynamic>>> streamChatMessages({String? otherUserId}) {
+    final user = client.auth.currentUser;
+    if (user == null) return Stream.value([]);
+
+    // We stream all relevant messages and filter/decrypt in the map
+    return client
+        .from('chat_messages')
+        .stream(primaryKey: ['id'])
+        .order('created_at', ascending: true)
+        .map((data) {
+          final filtered = data.where((msg) {
+            if (otherUserId != null) {
+              return (msg['sender_id'] == user.id && msg['receiver_id'] == otherUserId) ||
+                     (msg['sender_id'] == otherUserId && msg['receiver_id'] == user.id);
+            } else {
+              return (msg['sender_id'] == user.id && msg['receiver_id'] == null) ||
+                     (msg['sender_id'] == null && msg['receiver_id'] == user.id);
+            }
+          }).toList();
+
+          // Decrypt
+          for (var msg in filtered) {
+            msg['message'] = ChatSecurityService.decryptMessage(
+              msg['message'] ?? '', 
+              msg['sender_id'], 
+              msg['receiver_id']
+            );
+          }
+          return filtered;
+        });
   }
 }

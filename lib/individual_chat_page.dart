@@ -28,14 +28,13 @@ class _IndividualChatPageState extends State<IndividualChatPage> {
   final ScrollController _scrollController = ScrollController();
   List<Map<String, dynamic>> _messages = [];
   bool _isLoading = true;
-  Timer? _refreshTimer;
+  StreamSubscription? _chatSubscription;
 
   @override
   void initState() {
     super.initState();
     if (widget.isAdminChat) {
-      _fetchMessages();
-      _refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) => _fetchMessages());
+      _setupChatStream();
     } else {
       // Mock data for hospital chat
       _messages = [
@@ -46,32 +45,35 @@ class _IndividualChatPageState extends State<IndividualChatPage> {
     }
   }
 
+  void _setupChatStream() {
+    _chatSubscription = SupabaseService.streamChatMessages().listen((msgs) {
+      if (!mounted) return;
+      
+      setState(() {
+        _messages = msgs.map((m) {
+          final date = DateTime.tryParse(m['created_at'] ?? '')?.toLocal();
+          final isMe = m['sender_type'] == 'patient';
+          return {
+            'text': m['message'] ?? '',
+            'isMe': isMe,
+            'time': date != null ? '${date.hour > 12 ? date.hour - 12 : date.hour == 0 ? 12 : date.hour}:${date.minute.toString().padLeft(2, '0')} ${date.hour >= 12 ? 'PM' : 'AM'}' : '',
+          };
+        }).toList();
+        _isLoading = false;
+      });
+      _scrollToBottom();
+    });
+  }
+
   @override
   void dispose() {
-    _refreshTimer?.cancel();
+    _chatSubscription?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  Future<void> _fetchMessages() async {
-    final msgs = await SupabaseService.getChatMessages();
-    if (!mounted) return;
-    
-    setState(() {
-      _messages = msgs.map((m) {
-        final date = DateTime.tryParse(m['created_at'] ?? '')?.toLocal();
-        final isMe = m['sender_type'] == 'patient';
-        return {
-          'text': m['message'] ?? '',
-          'isMe': isMe,
-          'time': date != null ? '${date.hour > 12 ? date.hour - 12 : date.hour == 0 ? 12 : date.hour}:${date.minute.toString().padLeft(2, '0')} ${date.hour >= 12 ? 'PM' : 'AM'}' : '',
-        };
-      }).toList();
-      _isLoading = false;
-    });
-    _scrollToBottom();
-  }
+
 
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
@@ -102,8 +104,7 @@ class _IndividualChatPageState extends State<IndividualChatPage> {
 
     if (widget.isAdminChat) {
       try {
-        await SupabaseService.sendChatMessage(text);
-        _fetchMessages();
+        await SupabaseService.sendChatMessage(text, senderType: 'patient');
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to send message')));
       }

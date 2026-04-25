@@ -13,14 +13,12 @@ class ApiService {
 
   // Helper to clean phone numbers strictly for Supabase
   static String _cleanPhone(String phone) {
-    String clean = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    String clean = phone.trim().replaceAll(RegExp(r'[^\d+]'), '');
+    if (clean.startsWith('0')) clean = clean.substring(1);
+    if (clean.length == 10 && !clean.startsWith('+')) return '+91$clean';
+    if (clean.length == 12 && clean.startsWith('91')) return '+$clean';
     if (clean.startsWith('+')) return clean;
-    if (clean.length == 10 && RegExp(r'^\d+$').hasMatch(clean)) {
-      return '+91$clean';
-    }
-    if (clean.length == 12 && clean.startsWith('91')) {
-      return '+$clean';
-    }
+    if (clean.isNotEmpty && !clean.startsWith('+')) return '+$clean';
     return clean;
   }
 
