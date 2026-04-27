@@ -37,6 +37,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
   List<dynamic> _familyMembers = [];
   bool _isLoadingFamily = true;
   bool _isProcessingBooking = false;
+  String? _selectedDoctorId;
 
   @override
   void initState() {
@@ -413,12 +414,31 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                           itemCount: (_hospitalDetails!['doctors'] as List).length,
                           itemBuilder: (context, index) {
                             final doc = _hospitalDetails!['doctors'][index];
+                            final isSelected = _selectedDoctorId == doc['id'];
                             return ScaleOnTap(
-                              onTap: () {},
-                              child: _buildDoctorCard(
-                                doc['full_name'] ?? 'Doctor',
-                                doc['specialty'] ?? 'Specialist',
-                                doc['avatar_url'] ?? 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200',
+                              onTap: () {
+                                setState(() {
+                                  if (_selectedDoctorId == doc['id']) {
+                                    _selectedDoctorId = null;
+                                  } else {
+                                    _selectedDoctorId = doc['id'];
+                                  }
+                                });
+                                ToknSnackBar.show(context, message: _selectedDoctorId == null ? 'Doctor deselected' : 'Selected Dr. ${doc['full_name']}');
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isSelected ? const Color(0xFF2E4C9D) : Colors.transparent,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: _buildDoctorCard(
+                                  doc['full_name'] ?? 'Doctor',
+                                  doc['specialty'] ?? 'Specialist',
+                                  doc['avatar_url'] ?? 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200',
+                                ),
                               ),
                             );
                           },
@@ -665,59 +685,190 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
   }
 
   Future<void> _handleBooking(BuildContext context, String type, double price, String patientName, String description) async {
+    String docName = 'General (No specific doctor)';
+    if (_selectedDoctorId != null && _hospitalDetails?['doctors'] != null) {
+      final docs = _hospitalDetails!['doctors'] as List;
+      final selectedDoc = docs.firstWhere((d) => d['id'] == _selectedDoctorId, orElse: () => null);
+      if (selectedDoc != null) {
+        docName = 'Dr. ${selectedDoc['full_name']}';
+      }
+    }
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
         ),
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            Text(
+              'Booking Summary',
+              style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+            ),
+            const SizedBox(height: 20),
+            
+            // Summary Card
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                children: [
+                  _buildSummaryRow('Hospital', _hospitalDetails?['full_name'] ?? 'TokN Hospital'),
+                  _buildSummaryRow('Doctor', docName),
+                  _buildSummaryRow('Patient', patientName),
+                  _buildSummaryRow('Problem', description.isEmpty ? 'General Checkup' : description),
+                  _buildSummaryRow('Token Type', type, isBold: true, color: type == 'Emergency' ? Colors.red : const Color(0xFF2E4C9D)),
+                  const Divider(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Amount to Pay', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
+                      Text('₹$price', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: const Color(0xFF2E4C9D))),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 20),
+            
+            // Disclaimers
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
+              ),
+              child: Column(
+                children: [
+                  _buildDisclaimerItem(Icons.info_outline, 'This is only the Token Fee. Hospital consultation and other charges will be separate.'),
+                  _buildDisclaimerItem(Icons.timer_outlined, 'Expected token time may vary based on clinical conditions and doctor availability.'),
+                  _buildDisclaimerItem(Icons.receipt_long_outlined, 'Please note: This is a digital token, not the final hospital receipt (parchi).'),
+                  _buildDisclaimerItem(Icons.block_outlined, 'Booking fees are non-refundable as tokens are allocated in real-time.'),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 24),
             Text(
               'Select Payment Method',
-              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold),
+              style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 16),
+            
+            Row(
+              children: [
+                Expanded(
+                  child: _buildPaymentOption(
+                    icon: Icons.account_balance_wallet,
+                    label: 'Wallet',
+                    color: const Color(0xFF2E4C9D),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _processWalletPayment(type, price, patientName, description);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildPaymentOption(
+                    icon: Icons.qr_code_scanner,
+                    label: 'UPI Apps',
+                    color: Colors.green,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _processUpiPayment(type, price, patientName, description);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, String value, {bool isBold = false, Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 90,
+            child: Text(label, style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600])),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+                color: color ?? const Color(0xFF1E293B),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDisclaimerItem(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 14, color: Colors.blue[700]),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: GoogleFonts.poppins(fontSize: 11, color: Colors.blue[900], height: 1.4),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentOption({required IconData icon, required String label, required Color color, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+          borderRadius: BorderRadius.circular(16),
+          color: color.withValues(alpha: 0.02),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color),
             const SizedBox(height: 8),
-            Text(
-              'Total Amount: ₹$price',
-              style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF2E4C9D), fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 20),
-            
-            // Wallet Option
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.grey.shade200)),
-              leading: const Icon(Icons.account_balance_wallet_outlined, color: Color(0xFF2E4C9D)),
-              title: Text('TokN Wallet', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-              subtitle: Text('Pay using your wallet balance', style: GoogleFonts.poppins(fontSize: 12)),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.pop(context);
-                _processWalletPayment(type, price, patientName, description);
-              },
-            ),
-            const SizedBox(height: 12),
-            
-            // UPI Option
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.grey.shade200)),
-              leading: const Icon(Icons.qr_code_scanner, color: Colors.green),
-              title: Text('UPI Apps', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-              subtitle: Text('Google Pay, PhonePe, etc.', style: GoogleFonts.poppins(fontSize: 12)),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.pop(context);
-                _processUpiPayment(type, price, patientName, description);
-              },
-            ),
-            const SizedBox(height: 20),
+            Text(label, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
           ],
         ),
       ),
@@ -739,6 +890,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
       price: price,
       patientName: patientName,
       description: description,
+      doctorId: _selectedDoctorId,
     );
 
     if (mounted) {
@@ -771,7 +923,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
         txnId = response.split('txnId=')[1].split('&')[0];
       }
       
-      _finalizeUpiBooking(type, price, patientName, description, txnId);
+      _finalizeUpiBooking(type, price, patientName, description, txnId, _selectedDoctorId);
     } else if (response != null) {
       ToknSnackBar.show(context, message: 'Payment Failed or Cancelled');
     } else {
@@ -829,7 +981,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                 return;
               }
               Navigator.pop(context);
-              _finalizeUpiBooking(type, price, patientName, description, txnController.text);
+              _finalizeUpiBooking(type, price, patientName, description, txnController.text, _selectedDoctorId);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2E4C9D),
@@ -842,7 +994,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
     );
   }
 
-  Future<void> _finalizeUpiBooking(String type, double price, String patientName, String description, String txnId) async {
+  Future<void> _finalizeUpiBooking(String type, double price, String patientName, String description, String txnId, String? doctorId) async {
     if (_isProcessingBooking) return;
     setState(() => _isProcessingBooking = true);
     
@@ -860,6 +1012,7 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
         price: price,
         patientName: patientName,
         description: description,
+        doctorId: doctorId,
       );
 
       if (mounted) {

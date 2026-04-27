@@ -278,6 +278,7 @@ class ApiService {
     double price = 19.0,
     String? patientName,
     String? description,
+    String? doctorId,
   }) async {
     try {
       final result = await SupabaseService().bookTokenWithWallet(
@@ -286,6 +287,7 @@ class ApiService {
         price: price,
         patientName: patientName,
         description: description,
+        doctorId: doctorId,
       );
       if (result['success'] == true) {
         return {'success': true, 'data': result};
@@ -304,6 +306,7 @@ class ApiService {
     double price = 19.0,
     String? patientName,
     String? description,
+    String? doctorId,
   }) async {
     try {
       final result = await SupabaseService().bookTokenWithUpi(
@@ -313,6 +316,7 @@ class ApiService {
         txnId: txnId,
         patientName: patientName,
         description: description,
+        doctorId: doctorId,
       );
       if (result['success'] == true) {
         return {'success': true, 'data': result};
