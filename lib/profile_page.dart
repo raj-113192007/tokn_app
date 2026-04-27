@@ -16,6 +16,7 @@ import 'wallet_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'services/supabase_service.dart';
 import 'widgets/tokn_snackbar.dart';
+import 'services/wallet_service.dart';
 
 
 
@@ -45,6 +46,9 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _avatarUrl;
   bool _isUploading = false;
   bool _isProfileComplete = false;
+  double _walletBalance = 0.0;
+  List<Map<String, dynamic>> _recentTransactions = [];
+  final WalletService _walletService = WalletService();
 
 
 
@@ -87,15 +91,153 @@ class _ProfilePageState extends State<ProfilePage> {
                              (profile['blood_group'] != null);
         // You could query tokens_booked from a separate table if needed
       });
-    } else {
+    }
+    
+    final balance = await _walletService.getBalance();
+    final transactions = await _walletService.getTransactionHistory();
+    if (mounted) {
+      setState(() {
+        _walletBalance = balance;
+        _recentTransactions = transactions.take(2).toList();
+        if (profile == null) {
+          // If profile fetch failed but we have balance, ensure we still show what we can
+          final user = SupabaseService.client.auth.currentUser;
+          if (user != null) {
+            _userName = user.userMetadata?['full_name'] ?? 'User';
+          }
+        }
+      });
+    }
+
+    if (profile == null) {
       final prefs = await SharedPreferences.getInstance();
       setState(() {
         _userName = prefs.getString('user_name') ?? 'User';
         _userEmail = prefs.getString('user_email') ?? 'Update email in settings';
         _userPhone = prefs.getString('user_phone') ?? 'Update phone in settings';
-        _familyMemberCount = members.length;
-        _isEmailVerified = user?.emailConfirmedAt != null;
       });
+    }
+  }
+
+  void _showAddMoneyDialog() {
+    final TextEditingController amountController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Add Money', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: amountController,
+              keyboardType: TextInputType.number,
+              style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+              decoration: InputDecoration(
+                hintText: 'Enter Amount',
+                prefixText: '₹ ',
+                hintStyle: GoogleFonts.poppins(fontSize: 18, color: Colors.grey),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [100, 500, 1000].map((amt) => ActionChip(
+                label: Text('₹$amt'),
+                onPressed: () => amountController.text = amt.toString(),
+              )).toList(),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2E4C9D),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              final amount = double.tryParse(amountController.text);
+              if (amount != null && amount >= 1) {
+                Navigator.pop(context);
+                _processRecharge(amount);
+              } else {
+                ToknSnackBar.show(context, message: 'Minimum recharge amount is ₹1');
+              }
+            },
+            child: const Text('Proceed', style: TextStyle(color: Colors.white)),
+          )
+        ],
+      ),
+    );
+  }
+
+  Future<void> _processRecharge(double amount) async {
+    showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
+    
+    final response = await _walletService.launchNativeUpi(
+      amount: amount,
+      note: 'Wallet Recharge'
+    );
+    
+    if (mounted) Navigator.pop(context);
+
+    if (response != null && (response.toLowerCase().contains("status=success") || response.toLowerCase().contains("status=submitted"))) {
+      _finalizeRecharge(amount);
+    } else if (response != null) {
+      ToknSnackBar.show(context, message: 'Payment Failed or Cancelled');
+    } else {
+      final success = await _walletService.launchUpiPayment(
+        amount: amount,
+        note: 'Wallet Recharge'
+      );
+      if (success && mounted) {
+        _showUpiConfirmation(amount);
+      } else if (mounted) {
+        ToknSnackBar.show(context, message: 'Could not open UPI apps');
+      }
+    }
+  }
+
+  void _showUpiConfirmation(double amount) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Confirm Recharge', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        content: Text('Did you complete the recharge of ₹$amount successfully via UPI?', style: GoogleFonts.poppins()),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel', style: GoogleFonts.poppins(color: Colors.grey))),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _finalizeRecharge(amount);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E4C9D)),
+            child: Text('Yes, Recharge', style: GoogleFonts.poppins(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _finalizeRecharge(double amount) async {
+    showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
+    final successFinal = await _walletService.finalizeRecharge(
+      amount: amount,
+      txnId: 'TOK-${DateTime.now().millisecondsSinceEpoch}',
+      responseCode: '00',
+    );
+    if (mounted) Navigator.pop(context);
+
+    if (successFinal && mounted) {
+      ToknSnackBar.show(context, message: 'Wallet recharged successfully!', type: SnackBarType.success);
+      _loadUserData();
+    } else if (mounted) {
+      ToknSnackBar.show(context, message: 'Failed to update wallet balance');
     }
   }
 
@@ -782,7 +924,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     Row(
                       children: [
                         Text(
-                          _isBalanceVisible ? '₹2,500' : '₹ • • • •',
+                          _isBalanceVisible ? '₹${_walletBalance.toStringAsFixed(0)}' : '₹ • • • •',
                           style: GoogleFonts.poppins(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -809,7 +951,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
                 ScaleOnTap(
-                  onTap: () {},
+                  onTap: _showAddMoneyDialog,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
@@ -847,24 +989,39 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildTransactionItem(
-            icon: Icons.receipt_long_outlined,
-            title: 'Token #42 Payment',
-            date: 'Oct 14, 2023',
-            amount: '- ₹500',
-            isNegative: true,
-          ),
-          const Divider(height: 24, color: Color(0xFFF0F0F0)),
-          _buildTransactionItem(
-            icon: Icons.add_circle_outline,
-            title: l10n.addMoney,
-            date: 'Oct 10, 2023',
-            amount: '+ ₹1000',
-            isNegative: false,
-          ),
+          if (_recentTransactions.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Text('No recent transactions', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
+            )
+          else
+            ..._recentTransactions.map((tx) {
+              final isCredit = tx['transaction_type'] == 'credit';
+              final amount = (tx['amount'] as num).toDouble();
+              final date = DateTime.parse(tx['created_at']).toLocal();
+              final formattedDate = "${date.day} ${_getMonth(date.month)}, ${date.year}";
+              
+              return Column(
+                children: [
+                  _buildTransactionItem(
+                    icon: isCredit ? Icons.add_circle_outline : Icons.receipt_long_outlined,
+                    title: tx['description'] ?? (isCredit ? 'Wallet Recharge' : 'Payment'),
+                    date: formattedDate,
+                    amount: '${isCredit ? '+' : '-'} ₹${amount.abs().toStringAsFixed(0)}',
+                    isNegative: !isCredit,
+                  ),
+                  const Divider(height: 24, color: Color(0xFFF0F0F0)),
+                ],
+              );
+            }),
         ],
       ),
     );
+  }
+
+  String _getMonth(int month) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[month - 1];
   }
 
   Widget _buildTransactionItem({
